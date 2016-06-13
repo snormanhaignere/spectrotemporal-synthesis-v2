@@ -123,7 +123,7 @@ drawnow;
     P.audio_sr, P.env_sr, P.compression_factor, P.logf_spacing);
 
 % temporal indices to match, excluding the first P.buffer_sec seconds
-% n_t = size(coch_orig, 1);
+n_t = size(coch_orig, 1);
 % ti_to_match = {1:n_t};
 ti_to_match = 1 : n_t;
 
