@@ -25,11 +25,15 @@ P.spec_mod_to_plot = [0.25 1 4];
 % amount of frequency padding, twice the period of the lowest spectral scale
 P.freq_pad_oct = 2/min(P.spec_mod_rates(P.spec_mod_rates>0));
 
+% temporal padding
+% 3 x the longest period in the synthesis
+P.temp_pad_sec = 3/min(P.temp_mod_rates(P.temp_mod_rates>0));
+
 % maximum duration of the input and synthesis sound in seconds
 P.max_duration_sec = 12;
 
 % duration of buffer-zone used to avoid minimize temporal wrap-around effects
-P.buffer_sec = 2;
+% P.buffer_sec = 2;
 
 % audio sampling rate
 P.audio_sr = 20000;
