@@ -1,0 +1,101 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf400
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fswiss\fcharset0 ArialMT;}
+{\colortbl;\red255\green255\blue255;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww14120\viewh14980\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0\fs24 \cf0 \
+Sound Texture Synthesis Toolbox Version 1.4 - User Notes\
+\
+1. Introduction\
+\
+This toolbox contains a Matlab implementation of the sound texture synthesis algorithm described in this paper: \
+\
+McDermott, J.H. & Simoncelli, E.P. (2011) 
+\f1 Sound texture perception via statistics of the auditory periphery: Evidence from sound synthesis. Neuron, 71, 926-940)
+\f0 . \
+\
+These files have been reconfigured to make them more user-friendly, but should be functionally equivalent to those that were used to generate the stimuli from that paper. \
+\
+The basic synthesis process measures statistics in a specified sound file, then modifies a noise signal through an iterative process, to cause it to have the measured statistics.\
+\
+A demo version of the synthesis can be run with the demo_synthesis.m script. This uses settings intended to reduce CPU and memory usage, and should run on its own once you have downloaded the required optimization procedure.\
+\
+The toolbox is set to use Carl Rasmussen's minimize Matlab function, available on his website: http://learning.eng.cam.ac.uk/carl/code/minimize/minimize.m \
+It does the conjugate gradient descent at each iteration of the synthesis procedure. There are alternative (possibly faster) optimization procedures of more recent vintage that you could swap in for this without much trouble.\
+\
+To run the synthesis process more generally, you must first set the variables in a structure P that gets passed to the run_synthesis function. This structure contains all the parameters of the auditory model from which the statistics are measured (filter characteristics, compression etc.), parameters defining the statistics (number of correlations to measure, nature of measurement window etc.), and parameters of the synthesis process (optimization method, criteria for halting synthesis). These variables are set to default values in the synthesis_parameters.m file. It is worthwhile to read through the description of these parameters and make sure they are suitable for whatever you are doing. There are various options that can be turned on that may be useful depending on what you are doing.\
+\
+You will want to change P.orig_sound_filename (the file that will be read in and used to measure the target statistics), P.orig_sound_folder (the path to the sound file(s) to be read in), and P.output_folder (the location to which output files will be written). If you set P.orig_sound_folder to the empty string '', Matlab will look for the sound file in its path list. This toolbox comes with a couple example sound files, and the defaults are set for these sounds, so that straight out of the box the procedure should work if you run synthesis_parameters and then run_synthesis.\
+\
+The synthetic output will be generated at a standard sampling rate and rms level (specified in the parameter structure P) that may not be the same as those of the original sound file from which the statistics are measured. The default state of the algorithm is to generate a normalized version of the original file that has the same sampling rate and rms level as the synthetic output file, to facilitate their comparison.\
+\
+\
+2. 2011 Paper Methods\
+To replicate the synthesis results in the McDermott and Simoncelli 2011 Neuron paper:\
+\
+-Use the parameters specified in the synthesis_parameters_2011_Neuron_paper.m file, changing the statistical constraints as needed for the various experiments (principally the P.constraint_set, P.use_noise_stats, P.lin_or_log_filters, P.use_more_audio_filters, P.use_more_mod_filters, and P.compression_option variables).\
+\
+-Note that there are some options in the code that were unused in our 2011 paper (e.g. the envelope autocorrelation, which we used early on, as described in a 2009 WASPAA paper, but then replaced with modulation power statistics to better relate the statistics to standard models of the auditory system).\
+\
+-Note also that the NOT CONVERGED flag that gets added to the synthesis log if the statistics do not reach the criterion SNR is not the same as the criterion we used to include a synthetic sound in our experiments. The flag is tripped if any statistic class has an SNR below 20 dB, whereas our inclusion criterion was that the SNR averaged across statistics was at least 20 dB. In practice SNR is an imperfect measure of the success of imposition, in part because it is difficult to attain high SNRs when a statistic is close to zero (even when the absolute error is low). An average SNR of 20 dB seemed about right to avoid obvious failures of imposition, but the log file flag is set with a more conservative criterion so that you can inspect anything that might be questionable. The figures that can be generated at the end (by setting P.display_figures to 1) can also provide a sense of how well the statistics have been imposed.\
+\
+\
+3. Advice on Using This For Sound Synthesis\
+To get started synthesizing sounds:\
+\
+-In my experiments with the algorithm, I typically measured statistics from 7 seconds of original audio (using a measurement window that faded to zero over one-second-long intervals at the beginning and end of the sound, to avoid boundary artifacts). To get started I recommend using signals that are about this long. The algorithm will work with original sounds that are shorter than this, but depending on the timescale of the texture's stationarity, the statistics that are measured may not be representative of the texture. \
+\
+-If you have a slow computer, start by imposing a subset of the statistics (I suggest the envelope mean, variance, and skew, and the envelope correlation and modulation power, as are specified in synthesis_parameters_demo.m), as the synthesis procedure gets slower the more statistical constraints you add in. You can also lower the number of iterations after which the synthesis is halted (60 is often more than necessary, even if the statistics have not yet reached the halting SNR criterion).\
+\
+-In general, I recommend omitting the envelope kurtosis. It seemed like a good idea at the time, but in my experience is not necessary for compelling synthesis, and in some cases hurts the synthesis quality as it is not a very robust statistic, and its imposition can introduce minor artifacts. The envelope variance and skew, especially in conjunction with other statistics, should be sufficient to accurately reproduce the shape of the amplitude histogram. The defaults in the synthesis_parameters.m file omit the envelope kurtosis for this reason.\
+\
+-The subband kurtosis is largely redundant with the envelope variance and skew, and can be omitted. It is there for the sake of completeness and for historical reasons. The subband kurtosis modification makes use of the modkurt function from the Portilla-Simoncelli visual texture toolbox. It will only work if you have downloaded that and put it in your path. \
+\
+-The other statistic that can often be omitted without much cost in sound quality is the C2 correlation. For some sounds it can make a critical difference, but particularly for dense textures, the effect is often subtle. My suspicion is that it is not exactly the right way to capture phase relations, and an alternative formulation might end up being more crucial. The defaults in the synthesis_parameters.m file omit the C2 correlation for this reason. \
+\
+-The C1 correlation, in contrast, is often important to get natural sounding synthesis. If you omit the C1 correlation and only impose the basic "cochlear" envelope correlation, you can often see that the C1 correlations in the synthetic result deviate from those in the original sound signal in high modulation bands (typically being stronger than in the original natural sound), and this is often audible as an unnatural crunchiness to the sounds. It may improve synthesis quality to increase the number of C1 offsets that are imposed.\
+\
+\
+4. Miscellaneous Tips and Notes\
+\
+-SNR is convenient as a measure of the imposition success as it has the same units for all statistics. However, it is not ideal when statistics have values near zero, as deviations that are small in absolute terms will lead to low SNRs. For this reason the rms error is displayed for all correlation statistics instead of SNR in the before/after comparison following each iteration of imposition (this occurs when P.check_imposition_success is set to 1), as for those statistics the absolute error can be meaningfully interpreted. \
+\
+-For the same reason it is difficult to set a single criterion dB value that makes sense for all statistics. 20 dB is usually fine in my experience (in the sense that if all statistics are imposed to 20 dB, the result sounds about as good as if the SNR is higher, and the statistics generally look like they are well matched if you view them graphically). However, it is helpful to visually inspect the statistics using the figures that can be generated at the end of the synthesis process (by setting P.display_figures to 1)\
+\
+-The envelope statistics are imposed all at once in a single optimization procedure that attempts to minimize the total squared error in the statistics being imposed. Thus there is no guarantee that every statistic will get closer to the target value on every iteration, as sometimes the imposition of one statistic interferes with that of another. Over time they all tend to converge to the desired values, however, some faster than others.\
+\
+-Once the envelope statistics have been adjusted on a particular iteration, the envelopes are combined with the old fine structure to create new subbands, and then the subbands are combined into a full bandwidth sound signal. Both these stages in general interfere with the statistic imposition. The modified envelopes are in general not fully consistent with the old fine structure, and so combining them tends to alter the envelopes somewhat, potentially undoing some of the effect of the statistic imposition that just occurred. Moreover, the resulting subbands are in general no longer appropriately band limited, and so when they are filtered again prior to adding them up to generate the synthetic sound signal,  the filtering also undoes some of the effect of the statistic imposition. And then when the subbands are added together, they will in general not be fully consistent with each other, so that the subbands alter each other (in the sense that if you generate subbands from the resulting signal you will not get what you started with). Fortunately, these effects do not completely undo the effect of the statistic imposition (at least not in most of the cases I have examined), such that if you iterate this process, the envelope statistics gradually approach the desired values in a way that ends up consistent with their band limits and with each other. The fine structure is unconstrained but tends to relax into a state that is consistent with the envelopes.\
+\
+-Imposing the subband variance greatly speeds the imposition of the envelope mean (both are measures of power in a frequency band). However, because the subband variance is a measure of the power in the subband prior to compression, imposing it along with the envelope mean (when compression is applied to the envelopes) tends to constrain the other envelope moments as well, as the two statistics no longer measure exactly the same thing. If the statistics are all consistent (as when they are measured from a single sound file) this will speed convergence, but if you want to manipulate sparsity by changing the envelope variance and skew, you might omit the envelope mean and just use the subband variance, as it is more potent.\
+\
+\
+5. Morphing/Averaging\
+\
+-By measuring statistics in two or more source sounds, averaging the statistics, and then synthesizing a sound from those average statistics, it is possible to create statistical morphs. The code currently allows for this if you set P.avg_stat_option to 1 or 2 rather than 0. I have not explored this in great detail, and there are potential pitfalls - because the statistics that result from averaging two sounds were not measured in a single physically realized sound waveform, there is no guarantee that it is possible to generate a sound signal with the specified statistics. However, in practice it usually seems to mostly work, and the results are often interesting. By comparing the result to the average of the source sound waveforms, you can observe that averaging statistics is very different from averaging sounds - you get a texture that has a mixture of the perceptual properties of the two source signals, rather than simply sounding like a mixture of two concurrent distinct textures.\
+\
+\
+6. Imposing Noise Statistics\
+\
+-There is an option in the code to impose the statistics of pink noise in lieu of the measured statistics in particular cases. I have mostly experimented with doing this for the marginal statistics (the envelope variance/skew/kurtosis) that control aspect of sparsity. For the same reason that morphing is not guaranteed to work (in the sense of producing a waveform with the desired statistics), there is in general no guarantee that it is possible to generate a signal that has the statistics of noise for some statistics and of another sound signal for other statistics. However, it often works, particularly for the marginals, so it is there as an option.\
+\
+\
+7. Initializing Synthesis With an Arbitrary Waveform\
+\
+-There is now an option to initialize the synthesis procedure with a WAV file specified by the user. By default P.initialize_with_sound_file is set to 0; if instead set to 1 the synthetic sound will be initialized with the waveform in the file whose name is given by P.initial_sound_filename contained in the folder named P.initial_sound_folder.\
+\
+\
+Version Notes:\
+-version 1.4 added the ability to initialize with an arbitrary waveform, and fixed a few bugs that were causing the C1 and envelope mean to not be imposed if other statistics were not also selected for imposition.\
+	Updated files: synthesis_parameters.m, run_synthesis.m, and impose_env_stats.m\
+\
+\
+This toolbox represents work done between 2007 and 2011 with Eero SImoncelli. Due to other obligations it took me a long time to clean up the code for public distribution. \
+\
+Please email me (Josh McDermott; jhm@mit.edu) if you find any bugs in the code or have suggestions to improve the usability.\
+\
+Josh McDermott, Jan 2013\
+\
+-version 1.4 posted November 2013\
+\
+}
