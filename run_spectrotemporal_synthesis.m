@@ -125,7 +125,7 @@ drawnow;
 % temporal indices to match, excluding the first P.buffer_sec seconds
 % n_t = size(coch_orig, 1);
 % ti_to_match = {1:n_t};
-% ti_to_match = P.buffer_sec * P.env_sr + 1 : n_t;
+ti_to_match = 1 : n_t;
 
 %% Spectrotemporal features
 
@@ -224,13 +224,14 @@ for i = starting_iteration:P.n_iter+1
         
         % match histograms of spectrotemporal filters
         fprintf('Matching modulation filter envelopes...\n');
+        ti_to_match_assuming_padding = ti_to_match + P.temp_pad_sec * P.env_sr;
         coch_synth = ...
             match_filtcoch_hists(...
-            pad_coch_freq(coch_orig, P), pad_coch_freq(coch_synth, P), ...
-            P, ti_to_match);
+            pad_coch(coch_orig, P), pad_coch(coch_synth, P), ...
+            P, ti_to_match_assuming_padding);
 
         % remove frequency padding
-        coch_synth = remove_freq_pad(coch_synth, P);
+        coch_synth = remove_pad(coch_synth, P);
         
     end
     

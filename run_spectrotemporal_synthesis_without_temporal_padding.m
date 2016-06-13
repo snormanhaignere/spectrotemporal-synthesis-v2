@@ -1,4 +1,4 @@
-function run_spectrotemporal_synthesis(...
+function run_spectrotemporal_synthesis_without_temporal_padding(...
     P, fname, input_directory, output_directory, varargin)
 
 % Simplified version of the algorithm that does not rely directly on shihab's
@@ -195,7 +195,8 @@ for i = starting_iteration:P.n_iter+1
     
     % computes moments of the envelope of cochlear and modulation filters
     fprintf('Computing moments of filter responses for synthetic...\n');
-    M_synth = all_filter_moments_from_coch(coch_synth, P, ti_to_match);
+    M_synth = all_filter_moments_from_coch_without_temporal_padding(...
+        coch_synth, P, ti_to_match);
     
     % comparison of the moments for this iteration
     if ~exist('C', 'var');
