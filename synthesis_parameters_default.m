@@ -10,13 +10,23 @@ P.match_spectemp_mod = 1;
 % number of iterations to run algorithm for
 P.n_iter = 100;
 
+% maximum duration of the input and synthesis sound in seconds
+P.max_duration_sec = 12;
+
 % center frequencies of the temporal modulation filters in Hz
 % 0 indicates a filter with only power at the DC
-P.temp_mod_rates = [0,0.125,0.25,0.5,1,2,4,8,16,32,64,128];
+P.temp_mod_rates = [0,0.5,1,2,4,8,16,32,64,128];
 
 % center frequencies of the spectral modulation filters in cyc/octave
 % 0 indicates a filter with only power at the DC
 P.spec_mod_rates = [0,0.25,0.5,1,2,4,8];
+
+% additional lowrate temporal filters
+% these filters are used to encourage the 
+% stimuli to have an even distribution of energy across
+% the duration of the stimulus
+% the filters are modulated in time and broadband in frequency
+P.lowrate_tempfilts = [0.125 0.25];
 
 % temporal rates and spectral scales for which filtered cochleograms are plotted
 P.temp_mod_to_plot = [1 4 16];
@@ -27,10 +37,8 @@ P.freq_pad_oct = 2/min(P.spec_mod_rates(P.spec_mod_rates>0));
 
 % temporal padding
 % 3 x the longest period in the synthesis
-P.temp_pad_sec = 3/min(P.temp_mod_rates(P.temp_mod_rates>0));
-
-% maximum duration of the input and synthesis sound in seconds
-P.max_duration_sec = 12;
+all_temp_rates = [P.temp_mod_rates(P.temp_mod_rates>0), P.lowrate_tempfilts];
+P.temp_pad_sec = 3/min(all_temp_rates);
 
 % duration of buffer-zone used to avoid minimize temporal wrap-around effects
 % P.buffer_sec = 2;
@@ -62,6 +70,11 @@ P.logf_spacing = 1/24;
 
 % factor to which cochleogram envelopes are raised
 P.compression_factor = 0.3;
+
+% can optionally match the cochleogram every N seconds
+% if this variable is empty, then the cochleogram is matched
+% over the entire duration of the clip
+P.match_coch_every_Nsec = [];
 
 % number to seed the random number generator
 % fix this seed if you want to the synthetics for a given
