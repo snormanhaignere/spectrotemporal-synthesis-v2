@@ -21,12 +21,12 @@ P.temp_mod_rates = [0,0.5,1,2,4,8,16,32,64,128];
 % 0 indicates a filter with only power at the DC
 P.spec_mod_rates = [0,0.25,0.5,1,2,4,8];
 
-% additional lowrate temporal filters
-% these filters are used to encourage the 
-% stimuli to have an even distribution of energy across
-% the duration of the stimulus
-% the filters are modulated in time and broadband in frequency
-P.lowrate_tempfilts = [0.125 0.25];
+% additional lowrate temporal filters these filters are used to encourage the
+% stimuli to have an even distribution of energy across the duration of the
+% stimulus the filters are modulated in time and can be broadband or narrowband
+% in frequency
+P.lowrate_tempfilts_flat_spec = [];
+P.lowrate_tempfilts_impulse_spec = [];
 
 % temporal rates and spectral scales for which filtered cochleograms are plotted
 P.temp_mod_to_plot = [1 4 16];
@@ -37,7 +37,8 @@ P.freq_pad_oct = 2/min(P.spec_mod_rates(P.spec_mod_rates>0));
 
 % temporal padding
 % 3 x the longest period in the synthesis
-all_temp_rates = [P.temp_mod_rates(P.temp_mod_rates>0), P.lowrate_tempfilts];
+all_temp_rates = [P.temp_mod_rates(P.temp_mod_rates>0), ...
+    P.lowrate_tempfilts_flat_spec, P.lowrate_tempfilts_impulse_spec];
 P.temp_pad_sec = 3/min(all_temp_rates);
 
 % duration of buffer-zone used to avoid minimize temporal wrap-around effects

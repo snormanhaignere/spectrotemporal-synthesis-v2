@@ -61,10 +61,10 @@ audiowrite_checkclipping(...
     [output_directory '/' fname_without_extension '_orig.wav'], ...
     0.01*wav_orig / rms(wav_orig), P.audio_sr);
 
-% save the parameters
-save([output_directory '/' fname_without_extension '_parameters.mat'], 'P');
-
 %% Creates synthetic or load synthetic from previous run of the algorithm
+
+% add the random seed to the filename
+fname_without_extension = [fname_without_extension '_' num2str(P.random_seed)];
 
 % mat file that stores the synthetic and other useful infor
 synth_mat_file = [output_directory '/' fname_without_extension '_synth.mat'];
@@ -81,6 +81,9 @@ else
     starting_iteration = 1;
     
 end
+
+% save the parameters
+save([output_directory '/' fname_without_extension '_parameters.mat'], 'P');
 
 %% Cochleograms
 
@@ -292,13 +295,13 @@ if P.match_temp_mod
     P.temp_mod_to_match = ...
         [P.temp_mod_to_match, P.temp_mod_rates];
     P.spec_mod_to_match = ...
-        [P.spec_mod_to_match, NaN * ones(1,length(P.temp_mod_rates))];
+        [P.spec_mod_to_match, nan(1,length(P.temp_mod_rates))];
 end
 
 % add spectral modulation filters
 if P.match_spec_mod
     P.temp_mod_to_match = ...
-        [P.temp_mod_to_match, NaN * ones(1,length(P.spec_mod_rates))];
+        [P.temp_mod_to_match, nan(1,length(P.spec_mod_rates))];
     P.spec_mod_to_match = ...
         [P.spec_mod_to_match, P.spec_mod_rates];
 end
@@ -325,11 +328,21 @@ if P.match_spectemp_mod
 end
 
 % add separate low rate filters
-% these filters are modulated in time
-% and broadband in frequency
-if ~isempty(P.lowrate_tempfilts);
+% modulated in time but with a flat spectrum
+if (P.match_temp_mod || P.match_spectemp_mod) ...
+        && ~isempty(P.lowrate_tempfilts_flat_spec);
     P.temp_mod_to_match = ...
-        [P.temp_mod_to_match, P.lowrate_tempfilts];
+        [P.temp_mod_to_match, P.lowrate_tempfilts_flat_spec];
     P.spec_mod_to_match = ...
-        [P.spec_mod_to_match, zeros(1,length(P.lowrate_tempfilts))];
+        [P.spec_mod_to_match, zeros(1,length(P.lowrate_tempfilts_flat_spec))];
+end
+
+% add separate low rate filters
+% modulated in time but with an impulse spectrum
+if (P.match_temp_mod || P.match_spectemp_mod) ...
+        && ~isempty(P.lowrate_tempfilts_impulse_spec);
+    P.temp_mod_to_match = ...
+        [P.temp_mod_to_match, P.lowrate_tempfilts_impulse_spec];
+    P.spec_mod_to_match = ...
+        [P.spec_mod_to_match, nan(1,length(P.lowrate_tempfilts_impulse_spec))];
 end
