@@ -20,6 +20,10 @@ function M = all_filter_moments_from_coch(coch, P, ti)
 % ti = 1:size(coch,1);
 % M = all_filter_moments_from_coch(coch, P, ti)
 
+if nargin < 3
+    ti = 1:size(coch,1);
+end
+
 % cochleogram moments
 M.coch_env = moment_measures(coch(ti,:),1);
 

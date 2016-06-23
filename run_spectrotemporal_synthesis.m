@@ -257,32 +257,38 @@ end
 % plot cochleograms
 plot_cochleogram_orig_and_synth(coch_orig, coch_synth, ...
     P, output_directory, fname_without_extension);
+close all;
 
 % summary of moment comparisons
 plot_moment_comparison_summary(C, output_directory, fname_without_extension);
+close all;
 
 % detailed plots of the moments
 plot_moments(M_orig, M_synth, P, output_directory, fname_without_extension);
+close all;
 
 % detailed plots of the moments
 plot_moment_scatter(M_orig, M_synth, P, output_directory, fname_without_extension);
+close all;
 
 % filtered cochleograms
 plot_filtered_cochleograms(coch_orig, coch_synth, ...
     P, output_directory, fname_without_extension);
+close all;
 
 % histograms of example cochlear filters
 plot_coch_hists(coch_orig, coch_synth, ti_to_match, ...
     P, output_directory, fname_without_extension);
+close all;
 
 % histograms of example spectrotemporal filters
 plot_spectrotemporal_hists(coch_orig, coch_synth, ti_to_match, ...
     P, output_directory, fname_without_extension);
+close all;
 
 % plot 2DFT of the original and synthetic cochleogram
 plot_2DFT_orig_and_synth(...
     coch_orig, coch_synth, P, output_directory, fname_without_extension);
-
 close all;
 
 function P = determine_filters_to_match(P)
