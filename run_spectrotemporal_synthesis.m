@@ -316,9 +316,9 @@ end
 if P.match_spectemp_mod
     for i = 1:length(P.temp_mod_rates)
         for j = 1:length(P.spec_mod_rates);
-            if P.temp_mod_rates(i) == 0
+            if P.temp_mod_rates(i) == 0 || P.spec_mod_rates(i) == 0
                 P.temp_mod_to_match = ...
-                    [P.temp_mod_to_match, 0];
+                    [P.temp_mod_to_match, P.temp_mod_rates(i)];
                 P.spec_mod_to_match = ...
                     [P.spec_mod_to_match, P.spec_mod_rates(j)];
             else

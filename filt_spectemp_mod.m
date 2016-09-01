@@ -35,9 +35,7 @@ else
 end
 
 if ~isnan(spec_mod_rate)
-    
-    keyboard;
-    
+        
     % TF of spectral modulation filter
     Hs = filt_spec_mod(...
         spec_mod_rate, F, (1/P.logf_spacing),...
