@@ -252,6 +252,11 @@ for i = starting_iteration:P.n_iter+1
         
 end
 
+%% Calculate histogram divergences
+
+D = histogram_similarity(coch_orig, coch_synth, P); %#ok<NASGU>
+save(synth_mat_file, 'D', '-append');
+
 %% Plots
 
 % plot cochleograms
@@ -316,7 +321,7 @@ end
 if P.match_spectemp_mod
     for i = 1:length(P.temp_mod_rates)
         for j = 1:length(P.spec_mod_rates);
-            if P.temp_mod_rates(i) == 0 || P.spec_mod_rates(i) == 0
+            if P.temp_mod_rates(i) == 0 || P.spec_mod_rates(j) == 0
                 P.temp_mod_to_match = ...
                     [P.temp_mod_to_match, P.temp_mod_rates(i)];
                 P.spec_mod_to_match = ...
@@ -352,3 +357,23 @@ if (P.match_temp_mod || P.match_spectemp_mod) ...
     P.spec_mod_to_match = ...
         [P.spec_mod_to_match, nan(1,length(P.lowrate_tempfilts_impulse_spec))];
 end
+
+% check that the two vectors match in size
+assert(length(P.temp_mod_to_match) == length(P.spec_mod_to_match));
+
+% F = 217;
+% T = 500;
+% Hts = nan(T,F,length(P.temp_mod_to_match));
+% for i = 1:length(P.temp_mod_to_match)
+%     fprintf('%d\n',i);
+%     Hts(:,:,i) = filt_spectemp_mod(P.spec_mod_to_match(i), P.temp_mod_to_match(i), F, T, P);
+% end
+
+% %%
+% D = nan(length(P.temp_mod_to_match), length(P.temp_mod_to_match));
+% for i = 1:length(P.temp_mod_to_match)
+%     fprintf('%d\n',i);
+%     for j = i+1:length(P.temp_mod_to_match)
+%         D(i,j) = SumAll(abs(Hts(:,:,i)-Hts(:,:,j)).^2);
+%     end
+% end
