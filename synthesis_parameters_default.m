@@ -4,7 +4,7 @@ function P = synthesis_parameters_default
 % spectrotemporal modulation filters
 P.match_coch = 1; 
 P.match_temp_mod = 1;
-P.match_spec_mod = 0;
+P.match_spec_mod = 1;
 P.match_spectemp_mod = 1;
 
 % number of iterations to run algorithm for
@@ -36,7 +36,7 @@ P.spec_mod_to_plot = [0.25 1 4];
 P.freq_pad_oct = 2/min(P.spec_mod_rates(P.spec_mod_rates>0));
 
 % temporal padding
-% 3 x the longest period in the synthesis
+% 3x the longest period in the synthesis
 all_temp_rates = [P.temp_mod_rates(P.temp_mod_rates>0), ...
     P.lowrate_tempfilts_flat_spec, P.lowrate_tempfilts_impulse_spec];
 P.temp_pad_sec = 3/min(all_temp_rates);

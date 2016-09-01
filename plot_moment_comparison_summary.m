@@ -93,7 +93,6 @@ for i = 1:n_comparison_statistics
         end
         box off;
     end
-    
 
 end
 

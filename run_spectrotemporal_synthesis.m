@@ -138,9 +138,6 @@ match_mod_stats = ...
 
 if match_mod_stats
     
-    fprintf('Filtering cochleograms...\n');
-    drawnow;
-    
     % determines the filters to match 
     % given the specified parameters;
     P = determine_filters_to_match(P);
@@ -197,7 +194,8 @@ for i = starting_iteration:P.n_iter+1
         
         % match histograms of spectrotemporal filters
         fprintf('Matching modulation filter envelopes...\n');
-        ti_to_match_assuming_padding = ti_to_match + P.temp_pad_sec * P.env_sr;
+        ti_to_match_assuming_padding = ...
+            ti_to_match + round(P.env_sr * P.temp_pad_sec);
         coch_synth = ...
             match_filtcoch_hists(...
             pad_coch(coch_orig, P), pad_coch(coch_synth, P), ...
@@ -233,8 +231,9 @@ for i = starting_iteration:P.n_iter+1
         P.audio_sr, P.env_sr, P.compression_factor, P.logf_spacing);
     
     % save information
-    n_completed_iterations = i;
-    save(synth_mat_file, 'wav_synth', 'n_completed_iterations', 'C', 'M_synth', 'M_orig');
+    n_completed_iterations = i; %#ok<NASGU>
+    save(synth_mat_file, 'wav_synth', 'n_completed_iterations',...
+        'C', 'M_synth', 'M_orig');
     audiowrite_checkclipping(...
         strrep(synth_mat_file, '.mat', '.wav'), ...
         0.01*wav_synth / rms(wav_synth), P.audio_sr);
@@ -247,7 +246,8 @@ for i = starting_iteration:P.n_iter+1
     
     % summary of moment comparisons
     if i > 1
-        plot_moment_comparison_summary(C, output_directory, fname_without_extension);
+        plot_moment_comparison_summary(C, ...
+            output_directory, fname_without_extension);
     end
         
 end
@@ -307,7 +307,7 @@ end
 % add spectral modulation filters
 if P.match_spec_mod
     P.temp_mod_to_match = ...
-        [P.temp_mod_to_match, nan(1,length(P.spec_mod_rates))];
+        [P.temp_mod_to_match, nan(1,length( P.spec_mod_rates))];
     P.spec_mod_to_match = ...
         [P.spec_mod_to_match, P.spec_mod_rates];
 end
