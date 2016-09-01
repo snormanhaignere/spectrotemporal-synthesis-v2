@@ -20,11 +20,15 @@ function M = all_filter_moments_from_coch(coch, P, ti)
 % ti = 1:size(coch,1);
 % M = all_filter_moments_from_coch(coch, P, ti)
 
+if nargin < 3
+    ti = 1:size(coch,1);
+end
+
 % cochleogram moments
 M.coch_env = moment_measures(coch(ti,:),1);
 
-% fourier transform of the frequency-padded cochleogram
-FT_padded_coch = fft2(pad_coch_freq(coch,P));
+% 2D fourier transform of the padded cochleogram
+FT_padded_coch = fft2(pad_coch(coch,P));
 
 % remove zeros if present
 % don't need to measure the temporal statistics of a signal with no temporal
@@ -43,13 +47,13 @@ M.spectemp_mod = ...
     filtcoch_moments(FT_padded_coch, P.spec_mod_rates, temp_mod_rates_pos_and_neg, P, ti);
 
 function filter_moments = ...
-    filtcoch_moments(FFT_padded_coch, spec_mod_rates, temp_mod_rates, P, ti)
+    filtcoch_moments(FT_padded_coch, spec_mod_rates, temp_mod_rates, P, ti)
 
 % amount of frequency padding
 n_freq_pad_smps = round(P.freq_pad_oct / P.logf_spacing);
 
 % dimensions of frequency-padded cochleogram
-[T,F] = size(FFT_padded_coch);
+[T,F] = size(FT_padded_coch);
 
 n_moments = size(moment_measures(1,1),2);
 n_spec_mod_rates = length(spec_mod_rates);
@@ -63,8 +67,8 @@ for i = 1:n_spec_mod_rates
             spec_mod_rates(i), temp_mod_rates(j), F, T, P);
                                 
         % apply transfer function
-        filtcoch_padded = real(ifft2(FFT_padded_coch .* Hts));
-        filtcoch = remove_freq_pad(filtcoch_padded, P);
+        filtcoch_padded = real(ifft2(FT_padded_coch .* Hts));
+        filtcoch = remove_pad(filtcoch_padded, P);
         
         % moments of filtered cochleogram
         filter_moments(i,j,:,:) = moment_measures(filtcoch(ti,:),1);

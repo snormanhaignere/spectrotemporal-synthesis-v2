@@ -7,8 +7,8 @@ if ~exist('fft_freqs_from_siglen.m', 'file')
     addpath(genpath([directory_containing_this_file '/2DFT']));
 end
 
-FT_coch_orig = fft2(pad_coch_freq(coch_orig,P));
-FT_coch_synth = fft2(pad_coch_freq(coch_synth,P));
+FT_coch_orig = fft2(pad_coch(coch_orig,P));
+FT_coch_synth = fft2(pad_coch(coch_synth,P));
 
 % dimensions of X
 [T,S] = size(FT_coch_orig);

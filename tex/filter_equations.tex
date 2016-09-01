@@ -1,0 +1,27 @@
+\documentclass{article} % For LaTeX2e
+\usepackage{nips,times}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage[bottom]{footmisc}
+
+\begin{document}
+\raggedbottom
+\section{Filter equations}
+
+%\subsection{Temporal filters}
+
+\begin{align*}
+\shortintertext{Temporal impulse response:}
+h(t) &= \sin(2 \pi t) t^{2} e^{-3.5 t}\\
+\shortintertext{Spectral transfer function:}
+h(f) &= \frac{f^2} {\mu^2} e^{(1 - \frac{f^2}{\mu^2}) }\\
+&= \frac{f^2} {\mu^2} e^{\frac{(\mu^2 - f^2)} {\mu^2} }
+\end{align*} 
+
+
+\end{document}

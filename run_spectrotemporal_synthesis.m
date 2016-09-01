@@ -61,10 +61,10 @@ audiowrite_checkclipping(...
     [output_directory '/' fname_without_extension '_orig.wav'], ...
     0.01*wav_orig / rms(wav_orig), P.audio_sr);
 
-% save the parameters
-save([output_directory '/' fname_without_extension '_parameters.mat'], 'P');
-
 %% Creates synthetic or load synthetic from previous run of the algorithm
+
+% add the random seed to the filename
+fname_without_extension = [fname_without_extension '_' num2str(P.random_seed)];
 
 % mat file that stores the synthetic and other useful infor
 synth_mat_file = [output_directory '/' fname_without_extension '_synth.mat'];
@@ -81,6 +81,9 @@ else
     starting_iteration = 1;
     
 end
+
+% save the parameters
+save([output_directory '/' fname_without_extension '_parameters.mat'], 'P');
 
 %% Cochleograms
 
@@ -124,7 +127,8 @@ drawnow;
 
 % temporal indices to match, excluding the first P.buffer_sec seconds
 n_t = size(coch_orig, 1);
-ti_to_match = P.buffer_sec * P.env_sr + 1 : n_t;
+% ti_to_match = {1:n_t};
+ti_to_match = 1 : n_t;
 
 %% Spectrotemporal features
 
@@ -134,48 +138,10 @@ match_mod_stats = ...
 
 if match_mod_stats
     
-    fprintf('Filtering cochleograms...\n');
-    drawnow;
+    % determines the filters to match 
+    % given the specified parameters;
+    P = determine_filters_to_match(P);
     
-    P.temp_mod_to_match = [];
-    P.spec_mod_to_match = [];
-    
-    % add temporal modulation filters
-    if P.match_temp_mod
-        P.temp_mod_to_match = ...
-            [P.temp_mod_to_match, P.temp_mod_rates];
-        P.spec_mod_to_match = ...
-            [P.spec_mod_to_match, NaN * ones(1,length(P.temp_mod_rates))];
-    end
-    
-    % add spectral modulation filters
-    if P.match_spec_mod
-        P.temp_mod_to_match = ...
-            [P.temp_mod_to_match, NaN * ones(1,length(P.spec_mod_rates))];
-        P.spec_mod_to_match = ...
-            [P.spec_mod_to_match, P.spec_mod_rates];
-    end
-    
-    % add spectrotemporal filters
-    if P.match_spectemp_mod
-        for i = 1:length(P.temp_mod_rates)
-            for j = 1:length(P.spec_mod_rates);
-                if P.temp_mod_rates(i) == 0
-                    P.temp_mod_to_match = ...
-                        [P.temp_mod_to_match, 0];
-                    P.spec_mod_to_match = ...
-                        [P.spec_mod_to_match, P.spec_mod_rates(j)];
-                else
-                    P.temp_mod_to_match = ...
-                        [P.temp_mod_to_match, ...
-                        P.temp_mod_rates(i), -P.temp_mod_rates(i)];
-                    P.spec_mod_to_match = ...
-                        [P.spec_mod_to_match, ...
-                        P.spec_mod_rates(j) * ones(1,2)];
-                end
-            end
-        end
-    end
 end
 
 % figure;
@@ -216,27 +182,41 @@ for i = starting_iteration:P.n_iter+1
         % envelopes
         if i == 1 && P.match_coch
             % match cochlear histograms before first measuring filtered cochleograms
-            if P.match_coch
-                coch_synth = match_coch_hists(coch_orig, coch_synth, ti_to_match);
+            if ~isempty(P.match_coch_every_Nsec)
+                coch_synth = ...
+                    match_coch_hists_every_Nsec(...
+                    coch_orig, coch_synth, ti_to_match, P);
+            else
+                coch_synth = ...
+                    match_coch_hists(coch_orig, coch_synth, ti_to_match);
             end
         end
         
         % match histograms of spectrotemporal filters
         fprintf('Matching modulation filter envelopes...\n');
+        ti_to_match_assuming_padding = ...
+            ti_to_match + round(P.env_sr * P.temp_pad_sec);
         coch_synth = ...
             match_filtcoch_hists(...
-            pad_coch_freq(coch_orig, P), pad_coch_freq(coch_synth, P), ...
-            P, ti_to_match);
+            pad_coch(coch_orig, P), pad_coch(coch_synth, P), ...
+            P, ti_to_match_assuming_padding);
 
         % remove frequency padding
-        coch_synth = remove_freq_pad(coch_synth, P);
+        coch_synth = remove_pad(coch_synth, P);
         
     end
     
     % match cochlear histograms
     if P.match_coch
         fprintf('Matching cochlear envelopes...\n');
-        coch_synth = match_coch_hists(coch_orig, coch_synth, ti_to_match);
+        if ~isempty(P.match_coch_every_Nsec)
+            coch_synth = ...
+                match_coch_hists_every_Nsec(...
+                coch_orig, coch_synth, ti_to_match, P);
+        else
+            coch_synth = ...
+                match_coch_hists(coch_orig, coch_synth, ti_to_match);
+        end
     end
         
     % reconstruct waveform
@@ -251,8 +231,9 @@ for i = starting_iteration:P.n_iter+1
         P.audio_sr, P.env_sr, P.compression_factor, P.logf_spacing);
     
     % save information
-    n_completed_iterations = i;
-    save(synth_mat_file, 'wav_synth', 'n_completed_iterations', 'C', 'M_synth', 'M_orig');
+    n_completed_iterations = i; %#ok<NASGU>
+    save(synth_mat_file, 'wav_synth', 'n_completed_iterations',...
+        'C', 'M_synth', 'M_orig');
     audiowrite_checkclipping(...
         strrep(synth_mat_file, '.mat', '.wav'), ...
         0.01*wav_synth / rms(wav_synth), P.audio_sr);
@@ -265,7 +246,8 @@ for i = starting_iteration:P.n_iter+1
     
     % summary of moment comparisons
     if i > 1
-        plot_moment_comparison_summary(C, output_directory, fname_without_extension);
+        plot_moment_comparison_summary(C, ...
+            output_directory, fname_without_extension);
     end
         
 end
@@ -275,32 +257,98 @@ end
 % plot cochleograms
 plot_cochleogram_orig_and_synth(coch_orig, coch_synth, ...
     P, output_directory, fname_without_extension);
+close all;
 
 % summary of moment comparisons
 plot_moment_comparison_summary(C, output_directory, fname_without_extension);
+close all;
 
 % detailed plots of the moments
 plot_moments(M_orig, M_synth, P, output_directory, fname_without_extension);
+close all;
 
 % detailed plots of the moments
 plot_moment_scatter(M_orig, M_synth, P, output_directory, fname_without_extension);
+close all;
 
 % filtered cochleograms
 plot_filtered_cochleograms(coch_orig, coch_synth, ...
     P, output_directory, fname_without_extension);
+close all;
 
 % histograms of example cochlear filters
 plot_coch_hists(coch_orig, coch_synth, ti_to_match, ...
     P, output_directory, fname_without_extension);
+close all;
 
 % histograms of example spectrotemporal filters
 plot_spectrotemporal_hists(coch_orig, coch_synth, ti_to_match, ...
     P, output_directory, fname_without_extension);
+close all;
 
 % plot 2DFT of the original and synthetic cochleogram
 plot_2DFT_orig_and_synth(...
     coch_orig, coch_synth, P, output_directory, fname_without_extension);
-
 close all;
 
+function P = determine_filters_to_match(P)
 
+P.temp_mod_to_match = [];
+P.spec_mod_to_match = [];
+
+% add temporal modulation filters
+if P.match_temp_mod
+    P.temp_mod_to_match = ...
+        [P.temp_mod_to_match, P.temp_mod_rates];
+    P.spec_mod_to_match = ...
+        [P.spec_mod_to_match, nan(1,length(P.temp_mod_rates))];
+end
+
+% add spectral modulation filters
+if P.match_spec_mod
+    P.temp_mod_to_match = ...
+        [P.temp_mod_to_match, nan(1,length( P.spec_mod_rates))];
+    P.spec_mod_to_match = ...
+        [P.spec_mod_to_match, P.spec_mod_rates];
+end
+
+% add spectrotemporal filters
+if P.match_spectemp_mod
+    for i = 1:length(P.temp_mod_rates)
+        for j = 1:length(P.spec_mod_rates);
+            if P.temp_mod_rates(i) == 0
+                P.temp_mod_to_match = ...
+                    [P.temp_mod_to_match, 0];
+                P.spec_mod_to_match = ...
+                    [P.spec_mod_to_match, P.spec_mod_rates(j)];
+            else
+                P.temp_mod_to_match = ...
+                    [P.temp_mod_to_match, ...
+                    P.temp_mod_rates(i), -P.temp_mod_rates(i)];
+                P.spec_mod_to_match = ...
+                    [P.spec_mod_to_match, ...
+                    P.spec_mod_rates(j) * ones(1,2)];
+            end
+        end
+    end
+end
+
+% add separate low rate filters
+% modulated in time but with a flat spectrum
+if (P.match_temp_mod || P.match_spectemp_mod) ...
+        && ~isempty(P.lowrate_tempfilts_flat_spec);
+    P.temp_mod_to_match = ...
+        [P.temp_mod_to_match, P.lowrate_tempfilts_flat_spec];
+    P.spec_mod_to_match = ...
+        [P.spec_mod_to_match, zeros(1,length(P.lowrate_tempfilts_flat_spec))];
+end
+
+% add separate low rate filters
+% modulated in time but with an impulse spectrum
+if (P.match_temp_mod || P.match_spectemp_mod) ...
+        && ~isempty(P.lowrate_tempfilts_impulse_spec);
+    P.temp_mod_to_match = ...
+        [P.temp_mod_to_match, P.lowrate_tempfilts_impulse_spec];
+    P.spec_mod_to_match = ...
+        [P.spec_mod_to_match, nan(1,length(P.lowrate_tempfilts_impulse_spec))];
+end

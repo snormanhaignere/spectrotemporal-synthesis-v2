@@ -16,5 +16,4 @@ end
 P = synthesis_parameters_toy;
 
 % run synthesis
-P.n_iter = 100;
 run_spectrotemporal_synthesis(P, fname, input_directory, output_directory);

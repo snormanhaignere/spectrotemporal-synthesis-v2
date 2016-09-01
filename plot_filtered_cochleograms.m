@@ -2,8 +2,8 @@ function plot_filtered_cochleograms(coch_orig, coch_synth, ...
     P, output_directory, fname_without_extension)
 
 % 2DFT of original and synthetic cochleogram
-FT_padded_coch_orig = fft2(pad_coch_freq(coch_orig, P));
-FT_padded_coch_synth = fft2(pad_coch_freq(coch_synth, P));
+FT_padded_coch_orig = fft2(pad_coch(coch_orig, P));
+FT_padded_coch_synth = fft2(pad_coch(coch_synth, P));
 [T,F] = size(FT_padded_coch_orig);
 
 figure;
@@ -21,9 +21,9 @@ for i = 1:length(spec_mod_to_plot)
                                 
         % apply transfer function
         filtcoch_padded_orig = real(ifft2(FT_padded_coch_orig .* Hts));
-        filtcoch_orig = remove_freq_pad(filtcoch_padded_orig, P);
+        filtcoch_orig = remove_pad(filtcoch_padded_orig, P);
         filtcoch_padded_synth = real(ifft2(FT_padded_coch_synth .* Hts));
-        filtcoch_synth = remove_freq_pad(filtcoch_padded_synth, P);
+        filtcoch_synth = remove_pad(filtcoch_padded_synth, P);
         filtcochs = cat(3, filtcoch_orig, filtcoch_synth);
         
         orig_or_synth = {'orig', 'synth'};

@@ -4,6 +4,14 @@ function C = moment_comparisons(M_orig, M_synth, iteration, C)
 % 
 % Compares moments using two metrics (SNR and correlation). 
 
+if nargin < 3
+    iteration = 1;
+end
+
+if nargin < 4;
+    C = struct;
+end
+
 all_fields = fieldnames(M_orig);
 for i = 1:length(all_fields);
     
