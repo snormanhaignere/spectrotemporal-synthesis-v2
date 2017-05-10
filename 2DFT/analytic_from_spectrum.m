@@ -1,4 +1,4 @@
-function [ftx, zeroed_values] = analytic_from_spectrum(ftx, sgn)
+function [ftx, freqs_to_zero, freqs_to_double] = analytic_from_spectrum(ftx, sgn)
 
 % Creates an analytic signal from an input spectrum, zeroing negative
 % frequencies and doubling positive frequencies. 
@@ -32,6 +32,3 @@ ftx(freqs_to_zero) = 0;
 freqs_to_double = find(sign(freqs) == sgn);
 freqs_to_double = setdiff(freqs_to_double, [1, nyq_index]);
 ftx(freqs_to_double) = 2*ftx(freqs_to_double);
-
-% return zeroed values
-zeroed_values = freqs_to_zero;
