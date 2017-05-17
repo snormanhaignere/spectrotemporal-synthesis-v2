@@ -174,40 +174,64 @@ for i = starting_iteration:P.n_iter+1
     if i > P.n_iter
         break;
     end
-        
-    % match modulation filter stats
-    if match_mod_stats
-        
-        % match the cochlear envelopes before first matching the spectrotemporal
-        % envelopes
-        if i == 1 && P.match_coch
-            % match cochlear histograms before first measuring filtered cochleograms
-            if ~isempty(P.match_coch_every_Nsec)
-                coch_synth = ...
-                    match_coch_hists_every_Nsec(...
-                    coch_orig, coch_synth, ti_to_match, P);
-            else
-                coch_synth = ...
-                    match_coch_hists(coch_orig, coch_synth, ti_to_match);
-            end
+    
+    % match cochlear histograms
+    if P.match_coch
+        fprintf('Matching cochlear envelopes...\n');
+        if ~isempty(P.match_coch_every_Nsec)
+            coch_synth = ...
+                match_coch_hists_every_Nsec(...
+                coch_orig, coch_synth, ti_to_match, P);
+        else
+            coch_synth = ...
+                match_coch_hists(coch_orig, coch_synth, ti_to_match);
         end
-        
-        % match histograms of spectrotemporal filters
-        fprintf('Matching modulation filter envelopes...\n');
+    end
+    
+    % match histograms of spectrotemporal filters
+    if match_mod_stats
+        fprintf('Matching modulation histograms...\n');
         ti_to_match_assuming_padding = ...
             ti_to_match + round(P.env_sr * P.temp_pad_sec);
         coch_synth = ...
             match_filtcoch_hists(...
             pad_coch(coch_orig, P), pad_coch(coch_synth, P), ...
             P, ti_to_match_assuming_padding);
-
+        
         % remove frequency padding
         coch_synth = remove_pad(coch_synth, P);
-        
     end
     
-    % match cochlear histograms
-    if P.match_coch
+    % match correlation structure
+    if P.match_mod_covariance
+        fprintf('Matching modulation covariance...\n');
+        ti_to_match_assuming_padding = ...
+            ti_to_match + round(P.env_sr * P.temp_pad_sec);
+        coch_synth = ...
+            match_filtcoch_covariance(...
+            pad_coch(coch_orig, P), pad_coch(coch_synth, P), ...
+            P, ti_to_match_assuming_padding);
+        
+        % remove frequency padding
+        coch_synth = remove_pad(coch_synth, P);
+    end
+    
+    % re-match modulation structure
+    if match_mod_stats && P.match_mod_covariance
+        fprintf('Matching modulation histograms...\n');
+        ti_to_match_assuming_padding = ...
+            ti_to_match + round(P.env_sr * P.temp_pad_sec);
+        coch_synth = ...
+            match_filtcoch_hists(...
+            pad_coch(coch_orig, P), pad_coch(coch_synth, P), ...
+            P, ti_to_match_assuming_padding);
+        
+        % remove frequency padding
+        coch_synth = remove_pad(coch_synth, P);
+    end
+    
+    % re-match cochlear histograms
+    if P.match_coch && match_mod_stats
         fprintf('Matching cochlear envelopes...\n');
         if ~isempty(P.match_coch_every_Nsec)
             coch_synth = ...
@@ -296,70 +320,7 @@ plot_2DFT_orig_and_synth(...
     coch_orig, coch_synth, P, output_directory, fname_without_extension);
 close all;
 
-function P = determine_filters_to_match(P)
 
-P.temp_mod_to_match = [];
-P.spec_mod_to_match = [];
-
-% add temporal modulation filters
-if P.match_temp_mod
-    P.temp_mod_to_match = ...
-        [P.temp_mod_to_match, P.temp_mod_rates];
-    P.spec_mod_to_match = ...
-        [P.spec_mod_to_match, nan(1,length(P.temp_mod_rates))];
-end
-
-% add spectral modulation filters
-if P.match_spec_mod
-    P.temp_mod_to_match = ...
-        [P.temp_mod_to_match, nan(1,length( P.spec_mod_rates))];
-    P.spec_mod_to_match = ...
-        [P.spec_mod_to_match, P.spec_mod_rates];
-end
-
-% add spectrotemporal filters
-if P.match_spectemp_mod
-    for i = 1:length(P.temp_mod_rates)
-        for j = 1:length(P.spec_mod_rates);
-            if P.temp_mod_rates(i) == 0 || P.spec_mod_rates(j) == 0
-                P.temp_mod_to_match = ...
-                    [P.temp_mod_to_match, P.temp_mod_rates(i)];
-                P.spec_mod_to_match = ...
-                    [P.spec_mod_to_match, P.spec_mod_rates(j)];
-            else
-                P.temp_mod_to_match = ...
-                    [P.temp_mod_to_match, ...
-                    P.temp_mod_rates(i), -P.temp_mod_rates(i)];
-                P.spec_mod_to_match = ...
-                    [P.spec_mod_to_match, ...
-                    P.spec_mod_rates(j) * ones(1,2)];
-            end
-        end
-    end
-end
-
-% add separate low rate filters
-% modulated in time but with a flat spectrum
-if (P.match_temp_mod || P.match_spectemp_mod) ...
-        && ~isempty(P.lowrate_tempfilts_flat_spec);
-    P.temp_mod_to_match = ...
-        [P.temp_mod_to_match, P.lowrate_tempfilts_flat_spec];
-    P.spec_mod_to_match = ...
-        [P.spec_mod_to_match, zeros(1,length(P.lowrate_tempfilts_flat_spec))];
-end
-
-% add separate low rate filters
-% modulated in time but with an impulse spectrum
-if (P.match_temp_mod || P.match_spectemp_mod) ...
-        && ~isempty(P.lowrate_tempfilts_impulse_spec);
-    P.temp_mod_to_match = ...
-        [P.temp_mod_to_match, P.lowrate_tempfilts_impulse_spec];
-    P.spec_mod_to_match = ...
-        [P.spec_mod_to_match, nan(1,length(P.lowrate_tempfilts_impulse_spec))];
-end
-
-% check that the two vectors match in size
-assert(length(P.temp_mod_to_match) == length(P.spec_mod_to_match));
 
 % F = 217;
 % T = 500;

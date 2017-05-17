@@ -4,8 +4,9 @@ function P = synthesis_parameters_toy
 % spectrotemporal modulation filters
 P.match_coch = 1; 
 P.match_temp_mod = 1;
-P.match_spec_mod = 0;
+P.match_spec_mod = 1;
 P.match_spectemp_mod = 1;
+P.match_mod_covariance = 1;
 
 % number of iterations to run algorithm for
 P.n_iter = 10;
