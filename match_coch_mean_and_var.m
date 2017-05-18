@@ -41,11 +41,14 @@ function coch_synth = match(coch_orig, coch_synth)
 % demean
 coch_synth = bsxfun(@minus, coch_synth, mean(coch_synth));
 
-% normalize std/variance
-coch_synth = bsxfun(@times, coch_synth, 1./std(coch_synth));
+% normalize std/variance, leave channels with zero variance
+std_synth = std(coch_synth);
+std_synth(std_synth==0) = 1;
+coch_synth = bsxfun(@times, coch_synth, 1./std_synth);
 
 % match std/variance
-coch_synth = bsxfun(@times, coch_synth, std(coch_orig));
+std_orig = std(coch_orig);
+coch_synth = bsxfun(@times, coch_synth, std_orig);
 
 % match mean
 coch_synth = bsxfun(@plus, coch_synth, mean(coch_orig));
