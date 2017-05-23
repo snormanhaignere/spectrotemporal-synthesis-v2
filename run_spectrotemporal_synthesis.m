@@ -181,14 +181,19 @@ for i = starting_iteration:P.n_iter+1
         % match the cochlear envelopes before first matching the spectrotemporal
         % envelopes
         if i == 1 && P.match_coch
-            % match cochlear histograms before first measuring filtered cochleograms
+            % match cochlear statistics before first measuring filtered cochleograms
             if ~isempty(P.match_coch_every_Nsec)
                 coch_synth = ...
                     match_coch_hists_every_Nsec(...
                     coch_orig, coch_synth, ti_to_match, P);
             else
-                coch_synth = ...
-                    match_coch_hists(coch_orig, coch_synth, ti_to_match);
+                if P.match_just_mean_and_var
+                    coch_synth = match_coch_mean_and_var(...
+                        coch_orig, coch_synth, ti_to_match);
+                else
+                    coch_synth = match_coch_hists(...
+                        coch_orig, coch_synth, ti_to_match);
+                end
             end
         end
         
@@ -197,9 +202,9 @@ for i = starting_iteration:P.n_iter+1
         ti_to_match_assuming_padding = ...
             ti_to_match + round(P.env_sr * P.temp_pad_sec);
         coch_synth = ...
-            match_filtcoch_hists(...
+            match_filtcoch(...
             pad_coch(coch_orig, P), pad_coch(coch_synth, P), ...
-            P, ti_to_match_assuming_padding);
+            P, ti_to_match_assuming_padding, P.match_just_mean_and_var);
 
         % remove frequency padding
         coch_synth = remove_pad(coch_synth, P);
@@ -214,8 +219,13 @@ for i = starting_iteration:P.n_iter+1
                 match_coch_hists_every_Nsec(...
                 coch_orig, coch_synth, ti_to_match, P);
         else
-            coch_synth = ...
-                match_coch_hists(coch_orig, coch_synth, ti_to_match);
+            if P.match_just_mean_and_var
+                coch_synth = match_coch_mean_and_var(...
+                    coch_orig, coch_synth, ti_to_match);
+            else
+                coch_synth = match_coch_hists(...
+                    coch_orig, coch_synth, ti_to_match);
+            end
         end
     end
         
