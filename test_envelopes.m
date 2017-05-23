@@ -5,8 +5,8 @@
 
 % parameters
 P = synthesis_parameters_default;
-T = 400;
-F = 24*4;
+T = 100;
+F = 24*2;
 spec_mod_rate = 2;
 temp_mod_rate = 8;
 
@@ -16,10 +16,11 @@ set(gcf, 'Position', [200 200 300 800]);
 
 % FT of real filter
 FT_real_filter = filt_spectemp_mod(...
-    spec_mod_rate, temp_mod_rate, F, T, P);
+    spec_mod_rate, temp_mod_rate, F, T, P, 0, 0, 0, 0, false);
 
 % FT of complex filter
-FT_complex_filter = analytic_from_spectrum_2D(FT_real_filter, 1);
+FT_complex_filter = filt_spectemp_mod(...
+    spec_mod_rate, temp_mod_rate, F, T, P, 0, 0, 0, 0, true);
 
 % plot
 subplot(4,1,1);
