@@ -35,3 +35,24 @@ title('Imaginary Part of Complex filter');
 subplot(4,1,4);
 imagesc(abs(ifft2(FT_complex_filter)));
 title('Envelope');
+
+% speech waveform
+[wav, sr] = audioread('speech.wav');
+wav = format_wav(wav, sr, P);
+
+% cochleogram
+[coch, P] = wav2coch_without_filts(wav, P);
+
+% filtered cochleogram, subband and envelopes
+spec_mod_rate = 2;
+temp_mod_rate = 8;
+filtcoch_complex = coch2filtcoch(coch, spec_mod_rate, temp_mod_rate, P, true);
+
+% plot subband and envelopes
+figure;
+subplot(2,1,1);
+plot_cochleogram(real(filtcoch_complex), P.f, P.t);
+title('Subband');
+subplot(2,1,2);
+plot_cochleogram(abs(filtcoch_complex), P.f, P.t);
+title('Envelope');
