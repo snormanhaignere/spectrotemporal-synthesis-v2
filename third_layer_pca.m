@@ -50,13 +50,13 @@ for i = 1:length(P.temp_mod_third_layer)
         third_layer_pca_timecourses{i} = U*S;
         
         % reshape weights
-        third_layer_pca_weights{i} = reshape(V, [F, n_filters, n_comp]);
+        third_layer_pca_weights{i} = V;
         
     else % apply weights from a previous analysis
         
         % estimate weights
-        V = reshape(third_layer_pca_weights{i}, F*n_filters, n_comp);
-        third_layer_pca_timecourses{i} = reshape(third_layer, T, F*n_filters) * V';
+        third_layer_pca_timecourses{i} = ...
+            reshape(third_layer, T, F*n_filters) * third_layer_pca_weights{i};
         
     end
     
