@@ -1,4 +1,4 @@
-function C = third_layer_cov(FT_filtcoch_complex, P)
+function C = third_layer_cov(FT_filtcoch_complex, P, ti)
 
 % Calculates the covariance of third layer temporal filters for a collection of
 % second-layer filtered cochleograms
@@ -8,6 +8,12 @@ function C = third_layer_cov(FT_filtcoch_complex, P)
 % dimensionality of second-layer representation
 % time x frequency x all-filters
 [T, F, ~] = size(FT_filtcoch_complex);
+
+% temporal indices over which to compute covariances
+% useful for handling padding
+if nargin < 3
+    ti = 1:size(FT_filtcoch_complex,1);
+end
 
 C = cell(1, length(P.temp_mod_third_layer));
 for i = 1:length(P.temp_mod_third_layer)
@@ -34,7 +40,7 @@ for i = 1:length(P.temp_mod_third_layer)
     third_layer = reshape(third_layer, T, F*n_filters);
     
     % covariance
-    C{i} = third_layer' * third_layer;
+    C{i} = third_layer(ti,:)' * third_layer(ti,:);
     
 end
 
