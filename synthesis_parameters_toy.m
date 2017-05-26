@@ -23,7 +23,7 @@ P.spec_mod_rates = [0,1,2,4];
 % stimulus the filters are modulated in time and can be broadband or narrowband
 % in frequency
 P.lowrate_tempfilts_flat_spec = [];
-P.lowrate_tempfilts_impulse_spec = [0.25];
+P.lowrate_tempfilts_impulse_spec = [];
 
 % temporal rates and spectral scales for which filtered cochleograms are plotted
 P.temp_mod_to_plot = [2 32];
