@@ -7,31 +7,13 @@ function [coch, P, R] = wav2coch_without_filts(wav, P)
 % 
 % 2017-05-11: Very small fix, prior could request non-integer number of samples
 % from the filter
+% 
+% 2017-05-26: Now relies on cochfilts.m
 
-% cochleogram filters
-if P.overcomplete==0
-    [audio_filts, audio_low_cutoff] = ...
-        make_erb_cos_filters(length(wav), P.audio_sr, ...
-        P.n_filts, P.lo_freq_hz, P.audio_sr/2);
-    
-elseif P.overcomplete==1
-    [audio_filts, audio_low_cutoff] = ...
-        make_erb_cos_filts_double2(length(wav), P.audio_sr, ...
-        P.n_filts, P.lo_freq_hz, P.audio_sr/2);
-    
-elseif P.overcomplete==2
-    [audio_filts, audio_low_cutoff] = ...
-        make_erb_cos_filts_quadruple2(length(wav), P.audio_sr, ...
-        P.n_filts, P.lo_freq_hz, P.audio_sr/2);
-end
+% filters
+[audio_filts, audio_low_cutoff] = cochfilts(length(wav), P);
 
-% remove filters below and above desired cutoffs
-xi = audio_low_cutoff > P.lo_freq_hz - 1e-3 ...
-    & audio_low_cutoff < P.audio_sr/2 + 1e-3;
-audio_filts = audio_filts(:,xi);
-audio_low_cutoff = audio_low_cutoff(xi);
-
-% cochleogram 
+% cochleogram from filters
 [coch, P.f, P.t, R] = ...
     wav2coch(wav, audio_filts, audio_low_cutoff, ...
     P.audio_sr, P.env_sr, P.compression_factor, P.logf_spacing);

@@ -4,31 +4,12 @@ function [wav, P, R] = coch2wav_without_filts(coch, P, R)
 % parameter struct
 % 
 % 2016-06-23: Created by Sam NH
+% 
+% 2017-05-26: Now relies on cochfilts
 
-duration_sec = size(coch,1) / P.env_sr;
-
-% cochleogram filters
-if P.overcomplete==0
-    [audio_filts, audio_low_cutoff] = ...
-        make_erb_cos_filters(duration_sec*P.audio_sr, P.audio_sr, ...
-        P.n_filts, P.lo_freq_hz, P.audio_sr/2);
-    
-elseif P.overcomplete==1
-    [audio_filts, audio_low_cutoff] = ...
-        make_erb_cos_filts_double2(duration_sec*P.audio_sr, P.audio_sr, ...
-        P.n_filts, P.lo_freq_hz, P.audio_sr/2);
-    
-elseif P.overcomplete==2
-    [audio_filts, audio_low_cutoff] = ...
-        make_erb_cos_filts_quadruple2(duration_sec*P.audio_sr, P.audio_sr, ...
-        P.n_filts, P.lo_freq_hz, P.audio_sr/2);
-end
-
-% remove filters below and above desired cutoffs
-xi = audio_low_cutoff > P.lo_freq_hz - 1e-3 ...
-    & audio_low_cutoff < P.audio_sr/2 + 1e-3;
-audio_filts = audio_filts(:,xi);
-audio_low_cutoff = audio_low_cutoff(xi);
+% filters
+[audio_filts, audio_low_cutoff] = ...
+    cochfilts(P.audio_sr * size(coch,1) / P.env_sr, P);
 
 % convert to cochleogram
 wav = coch2wav(coch, R, ...
