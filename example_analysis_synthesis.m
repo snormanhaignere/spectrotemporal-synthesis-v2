@@ -6,7 +6,7 @@
 %% Setup
 
 % Parameters
-P = synthesis_parameters_toy;
+P = synthesis_parameters_default;
 
 % read in waveform
 [wav,sr] = audioread('speech.wav');
@@ -21,66 +21,31 @@ wav = wav(1:sr);
 figure;
 plot_cochleogram(coch, P.f, P.t)
 
-%% Single subbands
+%% Single subband
 
 % single subband
 spec_mod_rate = 2;
-temp_mod_rate = 4;
+temp_mod_rate = 2;
 
 % one-liner
 coch_subband = coch2filtcoch(coch, spec_mod_rate, temp_mod_rate, P);
 
-% break down one liner
-FT_coch = fft2(coch);
-Hts = filt_spectemp_mod(spec_mod_rate, temp_mod_rate, size(coch,2), size(coch,1), P);
-coch_subband = real(ifft2(FT_coch .* Hts));
-
 % plot subband
 figure;
-plot_cochleogram(coch_subband, P.f, P.t)
+plot_cochleogram(coch_subband, P.f, P.t);
 
 %% Multiple subbands
 
-% many subbands
-FT_coch = fft2(coch);
-spec_mod_rates = P.spec_mod_rates;
-temp_mod_rates = unique([-P.temp_mod_rates, P.temp_mod_rates]);
-coch_subbands = nan(length(P.t), length(P.f), ...
-    length(P.temp_mod_rates), length(P.spec_mod_rates));
-for i = 1:length(temp_mod_rates)
-    for j = 1:length(spec_mod_rates)
-        
-        % filter transfer function
-        Hts = filt_spectemp_mod(spec_mod_rates(j), temp_mod_rates(i), ...
-            size(coch,2), size(coch,1), P);    
-        coch_subbands(:,:,i,j) = real(ifft2(FT_coch .* Hts));
-    end
-end
+% include negative and positive rates
+P.temp_mod_rates = unique([-P.temp_mod_rates, P.temp_mod_rates]);
+
+% compute subbands
+% time x frequency x spectral modulation x temporal modulation
+filtcoch_allsubbands = coch2filtcoch_allsubbands(coch, P);
 
 %% Invert back to cochleogram
 
-% accumulate FT of matched cochleograms
-accum_FT_subbands = zeros(size(coch));
-accum_FT_transfer_function = zeros(size(coch));
-for i = 1:length(temp_mod_rates)
-    for j = 1:length(spec_mod_rates)
-        
-        % filter transfer function
-        Hts = filt_spectemp_mod(spec_mod_rates(j), temp_mod_rates(i), ...
-            size(coch,2), size(coch,1), P);        
-        
-        % accumulate FT of subbands
-        accum_FT_subbands = ...
-            accum_FT_subbands + fft2(coch_subbands(:,:,i,j)) .* conj(Hts);
-        
-        % accumulate FT of transfer functions
-        accum_FT_transfer_function = accum_FT_transfer_function + Hts .* conj(Hts);
-        
-    end
-end
-
-% divide by accumulated transfer functions
-coch_recon = real(ifft2(accum_FT_subbands ./ accum_FT_transfer_function));
+coch_recon = filtcoch2coch(filtcoch_allsubbands, P);
 
 % plot subband
 figure;
