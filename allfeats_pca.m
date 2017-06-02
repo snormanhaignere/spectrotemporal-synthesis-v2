@@ -1,4 +1,5 @@
-function allfeats_pca(stimuli, input_directory, output_directory, P, nPC)
+function [pca_timecourses, model_features] = allfeats_pca(...
+    stimuli, input_directory, output_directory, P, nPC, varargin)
 
 % Computes all of the features of the spectrotemporal model in a relatively
 % efficient and memory-saving manner for a set of stimuli.
@@ -9,7 +10,9 @@ function allfeats_pca(stimuli, input_directory, output_directory, P, nPC)
 % output_directory = '/Users/svnh2/Desktop/projects/naturalsound-ecog/analysis/stimulus-acoustics/spectrotemporal-envelopes-v2';
 % addpath(genpath(fileparts(which('allfeats.m'))));
 % stimuli = mydir(input_directory);
+% stimuli = stimuli(1:3);
 % nPC = 10;
+% varargin = {};
 % P = synthesis_parameters_toy;
 % P.temp_mod_rates = [2 8 32];
 % P.spec_mod_rates = [1 2 4];
@@ -27,10 +30,15 @@ function allfeats_pca(stimuli, input_directory, output_directory, P, nPC)
 %% Optional arguments
 
 % optional parameters
-I.overwrite = true;
+I.overwrite = false;
+I.keyboard = false;
 I = parse_optInputs_keyvalue(varargin, I);
 
-%% Stimulus-specific features, and feature covariances
+% if I.keyboard
+%     keyboard;
+% end
+
+%% Cochleograms and filtered cochleograms
 
 % create output directory if it doesn't exist
 if ~exist(output_directory, 'dir')
@@ -40,7 +48,11 @@ end
 % loop through stimuli
 for i = 1:length(stimuli)
     
-    fprintf('%s\n', stimuli{i});
+    % separate file name from extension
+    [~, fname, ~] = fileparts(stimuli{i});
+    
+    % print file name
+    fprintf('\n\n%d: %s\n', i, fname); drawnow;
     
     % read in stimulus
     [y, sr] = audioread([input_directory '/' stimuli{i}]);
@@ -56,8 +68,9 @@ for i = 1:length(stimuli)
     end
         
     % compute cochleogram
-    coch_MAT_file = [output_directory '/coch_' stimuli{i} '.mat'];
+    coch_MAT_file = [output_directory '/coch_' fname '.mat'];
     if ~exist(coch_MAT_file, 'file') || I.overwrite
+        fprintf('Computing cochleogram\n'); drawnow;
         [coch, P] = wav2coch_without_filts(y, P);
         
         % save
@@ -68,9 +81,10 @@ for i = 1:length(stimuli)
     end
         
     % compute second layer filters from cochleogram
-    filtcoch_MAT_file = [output_directory '/filtcoch_' stimuli{i} '.mat'];
+    filtcoch_MAT_file = [output_directory '/filtcoch_' fname '.mat'];
     if ~exist(filtcoch_MAT_file, 'file') || I.overwrite
-        
+        fprintf('Computing filtered cochleograms\n'); drawnow;
+
         % load cochleogram
         if ~exist('coch', 'var')
             load(coch_MAT_file, 'F', 'P');
@@ -84,7 +98,7 @@ for i = 1:length(stimuli)
         complex_filters = true;
         fourier_domain = false;
         filtcoch = coch2filtcoch_allsubbands(...
-            padded_coch, P, complex_filters, fourier_domain);   
+            padded_coch, P, complex_filters, fourier_domain);  
         clear complex_filters fourier_domain;
         
         % remove frequency padding
@@ -100,75 +114,111 @@ for i = 1:length(stimuli)
         clear F;
         
     end
+end
+
+%% Principal components for cochleograms and filtered cochleograms
+
+pca_activations_coch_filtcoch_MAT_file = ...
+    [output_directory '/pca-activations-coch-filtcoch.mat'];
+
+if ~exist(pca_activations_coch_filtcoch_MAT_file, 'file') || I.overwrite
+    
+    % Feature covariances across stimuli
+    model_features = {'coch', 'filtcoch'};
+    C = cell(1, length(model_features));
+    for i = 1:length(model_features)
+        for j = 1:length(stimuli)
+            [~,fname,~] = fileparts(stimuli{j});
+            fprintf('feat cov: %s, %s\n', model_features{i}, stimuli{j}); drawnow;
+            load([output_directory '/' model_features{i} '_' fname '.mat'], 'F', 'ti');
+            dims = size(F);
+            F = reshape(F, dims(1), prod(dims(2:end)));
+            if j == 1
+                C{i} = zeros(size(F,2));
+            end
+            F = F(ti,:);
+            C{i} = C{i} + F' * F;
+        end
+    end
+    
+    % pca weights on the filters form the covariance matrix
+    pca_weights = cell(size(model_features));
+    pca_eigvals = cell(size(model_features));
+    for i = 1:length(model_features)
         
-    % third layer
-    third_layer_PCs_MAT_file = [output_directory '/third-layer-PCs_' stimuli{i} '.mat'];
-    if ~exist(third_layer_MAT_file, 'file') || I.overwrite
+        % eigenvectors of covariance
+        [pca_weights{i}, pca_eigvals{i}] = eig(C{i});
         
-        % load filtered cochleograms
-        if ~exist('filtcoch', 'var') || ~exist('ti', 'var')
-            load(filtcoch_MAT_file, 'filtcoch', 'ti');
+        % sort by variance
+        pca_eigvals{i} = diag(pca_eigvals{i});
+        [~, xi] = sort(pca_eigvals{i}, 'descend');
+        pca_weights{i} = pca_weights{i}(:,xi);
+        pca_eigvals{i} = pca_eigvals{i}(xi);
+
+        % select subset of components
+        if size(pca_weights{i},2) > nPC
+            pca_weights{i} = pca_weights{i}(:,1:nPC);
         end
         
-        % third layer PCs
-        [third_layer_pca_timecourses, third_layer_pca_weights] = ...
-            third_layer_pca(filtcoch, P);
-        
-        % concatenate different rates
-        third_layer_pca_timecourses = cat(2, third_layer_pca_timecourses{:});
-        
-        % take modulus
-        third_layer_pca_timecourses = abs(third_layer_pca_timecourses);
-        
-        % save
-        F = third_layer_pca_timecourses;
-        W = third_layer_pca_weights;
-        save(third_layer_PCs_MAT_file, 'F', 'W', 'ti');
-        clear F W ti;
-        
     end
-   
-end
-
-%% Feature covariances across stimuli
-
-model_features = {'coch', 'filtcoch', 'third-layer-PCs'};
-C = cell(1, length(model_features));
-for i = 1:length(model_features)
-    for j = 1:length(stimuli)
-        load([output_directory '/' model_features{i} '_' stimuli{j} '.mat'], 'F', 'ti');
-        dims = size(F);
-        F = reshape(F, dims(1), prod(dims(2:end)));
-        if j == 1
-            C{i} = zeros(size(F,2));
+    
+    % pca timecourses from the weights
+    pca_timecourses = cell(size(model_features));
+    for i = 1:length(model_features)
+        for j = 1:length(stimuli)
+            [~,fname,~] = fileparts(stimuli{j});
+            fprintf('pca timecourses: %s, %s\n', model_features{i}, stimuli{j}); drawnow;
+            load([output_directory '/' model_features{i} '_' fname '.mat'], 'F', 'ti');
+            dims = size(F);
+            F = reshape(F, dims(1), prod(dims(2:end)));
+            pca_timecourses{i}(:,j,:) = F(ti,:) * pca_weights{i};
         end
-        F = F(ti,:);
-        C{i} = C{i} + F' * F;
     end
+    
+    save(pca_activations_coch_filtcoch_MAT_file, 'pca_timecourses', 'pca_weights', 'pca_eigvals', 'model_features');
+    
+else
+    
+    model_features = {'coch', 'filtcoch'};
+    load(pca_activations_coch_filtcoch_MAT_file, 'pca_timecourses', 'pca_weights', 'pca_eigvals');
+    
 end
 
-%% Eigen decomposition of covariances
+%% Third layer principal components
 
-eigvecs = cell(size(model_features));
-for i = 1:length(model_features)
-    [eigvecs{i}, ~] = eig(C{i});
-    eigvecs{i} = fliplr(eigvecs{i});
-    eigvecs{i} = eigvecs{i}(:,1:nPC);
+filtcoch_MAT_files = cell(1, length(stimuli));
+for i = 1:length(stimuli)
+    [~, fname, ~] = fileparts(stimuli{i});
+    filtcoch_MAT_files{i} = [output_directory '/filtcoch_' fname '.mat'];
 end
 
-%% Calculate PCA activations
+% principal components per rate
+[third_layer_pca_timecourses, third_layer_pca_weights, third_layer_pca_eigvals] = ...
+    third_layer_pca_multistim(filtcoch_MAT_files, nPC, P, output_directory, ...
+    'overwrite', I.overwrite);
 
-model_features = {'coch', 'filtcoch', 'third-layer-PCs'};
-pca_activations = cell(1, length(model_features));
-for i = 1:length(model_features)
-    for j = 1:length(stimuli)
-        load([output_directory '/' model_features{i} '_' stimuli{j} '.mat'], 'F', 'ti');
-        dims = size(F);
-        F = reshape(F, dims(1), prod(dims(2:end)));
-        pca_activations{i}(:,j,:) = F(ti,:) * eigvecs{i};
-    end
-end
+% reshape to matrix
+third_layer_pca_timecourses = cat(3, third_layer_pca_timecourses{:});
+[n_timepoints, n_stimuli, n_comp] = size(third_layer_pca_timecourses);
+third_layer_pca_timecourses = ...
+    reshape(third_layer_pca_timecourses, n_timepoints * n_stimuli, n_comp);
 
+% principal components of envelopes
+[U,S,V] = svd(abs(third_layer_pca_timecourses),  'econ');
+
+% select subset of components
+U = U(:, 1:nPC);
+S = S(1:nPC, 1:nPC);
+V = V(1:nPC);
+
+% reshape
+US = reshape(U*S, n_timepoints, n_stimuli, nPC);
+
+% add to the timecourse and weights
+pca_timecourses = [pca_timecourses, {US}];
+pca_weights = [pca_weights, {V}];
+
+model_features = [model_features, {'thirdlayer'}];
 
 %%
 % 
@@ -205,7 +255,37 @@ end
 %     
 % end
 
+%% Third layer
 
+% % third layer
+% third_layer_PCs_MAT_file = [output_directory '/third-layer-PCs_' stimuli{i} '.mat'];
+% if ~exist(third_layer_PCs_MAT_file, 'file') || I.overwrite
+%     
+%     fprintf('Computing third-layer PCs\n'); drawnow;
+%     
+%     % load filtered cochleograms
+%     if ~exist('filtcoch', 'var') || ~exist('ti', 'var')
+%         load(filtcoch_MAT_file, 'filtcoch', 'ti');
+%     end
+%     
+%     % third layer PCs
+%     [third_layer_pca_timecourses, third_layer_pca_weights] = ...
+%         third_layer_pca(filtcoch, P);
+%     
+%     % concatenate different rates
+%     third_layer_pca_timecourses = cat(2, third_layer_pca_timecourses{:});
+%     
+%     % take modulus
+%     third_layer_pca_timecourses = abs(third_layer_pca_timecourses);
+%     
+%     % save
+%     F = third_layer_pca_timecourses;
+%     W = third_layer_pca_weights;
+%     save(third_layer_PCs_MAT_file, 'F', 'W', 'ti');
+%     clear F W ti;
+%     
+% end
+%     
 %% Covariance
 
 % 
