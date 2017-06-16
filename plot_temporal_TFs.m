@@ -27,13 +27,11 @@ if ~exist(figure_directory,'dir')
     mkdir(figure_directory);
 end
 
-P = synthesis_parameters_default;
-P.temp_mod_rates = P.temp_mod_rates(P.temp_mod_rates>0);
+P = measurement_parameters_default;
 
 %% Temporal impulse responses
 
 figure;
-
 for i = 1:length(P.temp_mod_rates)
         
     % number of samples
@@ -44,7 +42,8 @@ for i = 1:length(P.temp_mod_rates)
     
     % transfer function of the filter
     filt_tf = filt_temp_mod(...
-        P.temp_mod_rates(i), n_temporal_smps, temporal_sr_Hz, 0, 0);
+        P.temp_mod_rates(i), n_temporal_smps, temporal_sr_Hz, ...
+        P.temp_mod_lowpass(i), 0);
 
     % nyquist
     max_pos_freq = ceil((n_temporal_smps+1)/2);

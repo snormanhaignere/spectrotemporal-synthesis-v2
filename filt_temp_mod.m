@@ -4,29 +4,7 @@ function H = filt_temp_mod(fc_Hz, N, sr_Hz, LOWPASS, HIGHPASS)
 % derived from gen_cort.m in the nsl toolbox
 % 
 % -- Example --
-% fc_Hz = 4;
-% sr_Hz = 100;
-% n_temporal_smps = 4 * sr_Hz / fc_Hz; % number of samples
-% lowpass = 0;
-% highpass = 0;
-% 
-% % transfer function of the filter
-% H = filt_temp_mod(fc_Hz, n_temporal_smps, sr_Hz, lowpass, highpass);
-% 
-% % plot TF
-% figure;
-% subplot(2,1,1);
-% f = fft_freqs_from_siglen(n_temporal_smps, sr_Hz);
-% plot(fftshift_nyqlast(f), fftshift_nyqlast(abs(H)));
-% xlabel('Freq (Hz)'); ylabel('Magnitude');
-% subplot(2,1,2);
-% plot(fftshift_nyqlast(f), unwrap(fftshift_nyqlast(phase(H))));
-% xlabel('Freq (Hz)'); ylabel('Phase');
-% 
-% % plot IRF
-% figure;
-% t = (0:n_temporal_smps-1)/sr_Hz;
-% plot(t, real(ifft(H)));
+ 
 
 % delta transfer function
 % constant impulse response
@@ -47,10 +25,11 @@ end
 
 % irf
 t = (0:N-1)'/sr_Hz * fc_Hz; % time * fc_Hz
-h = sin(2*pi*t) .* t.^2 .* exp(-3.5*t); % gammatone 
-
-% remove DC
-h = h-mean(h);
+if LOWPASS
+    h = t.^2 .* exp(-3.5*t); % gammatone
+else
+    h = sin(2*pi*t) .* t.^2 .* exp(-3.5*t); % gammatone 
+end
 
 % magnitude and phase of gammatone
 H0 = fft(h);
@@ -61,7 +40,7 @@ A = abs(H0);
 A = A / max(A);
 
 % create lowpass or highpass version if desired
-if LOWPASS || HIGHPASS
+if HIGHPASS
     
     % nyquist if present, otherwise highest pos. freq
     nyq_index = ceil((N+1)/2);
@@ -73,12 +52,6 @@ if LOWPASS || HIGHPASS
     
     % check max is 1
     assert(all(A([maxA_index_pos, maxA_index_neg]) == 1))
-
-    % make lowpass/highpass if desired
-    if LOWPASS
-        A(1:maxA_index_pos) = 1;
-        A(maxA_index_neg:N) = 1;
-    end
     
     if HIGHPASS
         A(maxA_index_pos:maxA_index_neg) = 1;
