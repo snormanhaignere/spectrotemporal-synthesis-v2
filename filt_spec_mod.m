@@ -68,9 +68,20 @@ end
 
 % transfer function for positive frequencies
 % fc is the center frequency
-R1 = (pos_freqs/abs(fc_cycPoct)) .^ 2;
-H_pos_freqs = R1 .* exp(1-R1); 
+if LOWPASS
+    per = 1/abs(fc_cycPoct);
+    sig = per/2; % period = 2*sigma
+    a = 1/(sig.^2);
+    H_pos_freqs = exp(-(pi^2) * pos_freqs.^2 / a);
+    % see: http://mathworld.wolfram.com/FourierTransformGaussian.html
+else
+    f2 = pos_freqs.^2/abs(fc_cycPoct).^2;
+    H_pos_freqs = f2 .* exp(-f2);
+end
 clear R1;
+
+% normalize maximum frequency
+H_pos_freqs = H_pos_freqs / max(H_pos_freqs);
 
 % passband
 if LOWPASS

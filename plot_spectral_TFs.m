@@ -27,8 +27,7 @@ if ~exist(figure_directory,'dir')
     mkdir(figure_directory);
 end
 
-P = synthesis_parameters_default;
-P.spec_mod_rates = P.spec_mod_rates(P.spec_mod_rates>0);
+P = measurement_parameters_default;
 
 %% Temporal impulse responses
 
@@ -39,12 +38,12 @@ for i = 1:length(P.spec_mod_rates)
     % number of samples
     % temporal sampling rate in Hz
     specral_sr_cyc_per_oct = 24;
-    n_oct = log2(10e3/20);
+    n_oct = log2(10e3/20)*2;
     n_spectral_smps = ceil(specral_sr_cyc_per_oct*n_oct); % number of samples
     
     % transfer function of the filter
     filt_tf = filt_spec_mod(...
-        P.spec_mod_rates(i), n_spectral_smps, specral_sr_cyc_per_oct, 0, 0);
+        P.spec_mod_rates(i), n_spectral_smps, specral_sr_cyc_per_oct, P.spec_mod_lowpass(i), 0);
     
     % nyquist
     max_pos_freq = ceil((n_spectral_smps+1)/2);
@@ -57,7 +56,7 @@ for i = 1:length(P.spec_mod_rates)
     filt_phase = unwrap(angle(filt_tf(1:max_pos_freq)));
     
     % calculate 3dB down bandwidth
-    if ~lowpass && ~highpass
+    if true%~P.spec_mod_lowpass(i) %~lowpass && ~highpass
         mod_freqs_above_cf = mod_freqs_cyc_per_oct(mod_freqs_cyc_per_oct > P.spec_mod_rates(i));
         filt_pow_above_cf = filt_pow_dB(mod_freqs_cyc_per_oct > P.spec_mod_rates(i));
         mod_freqs_below_cf = mod_freqs_cyc_per_oct(mod_freqs_cyc_per_oct < P.spec_mod_rates(i));
