@@ -1,7 +1,7 @@
 function Hts = filt_spectemp_mod(...
     spec_mod_rate, temp_mod_rate, F, T, P, ...
-    lowpass_specmod, lowpass_tempmod, ...
-    highpass_specmod, highpass_tempmod)
+    lowpass_specmod, lowpass_tempmod, highpass_specmod, highpass_tempmod, ...
+    complex_filters)
 
 % Returns 2D transfer function for a spectrotemporal filter
 
@@ -19,6 +19,10 @@ end
 if nargin < 8
     highpass_specmod = 0;
     highpass_tempmod = 0;
+end
+
+if nargin < 9
+    complex_filters = false;
 end
 
 if ~isnan(temp_mod_rate)
@@ -75,6 +79,24 @@ if ~isnan(temp_mod_rate) && ~isnan(spec_mod_rate)
     
 end
 
+% create complex-valued filters via analytic signal
+if complex_filters
+    if ~isnan(temp_mod_rate) && isnan(spec_mod_rate) % temporal
+        Hts = analytic_from_spectrum_2D(Hts, 1);
+        
+    elseif ~isnan(spec_mod_rate) && isnan(temp_mod_rate) % spectral
+        Hts = analytic_from_spectrum_2D(Hts, 2);
+        
+    elseif ~isnan(spec_mod_rate) && ~isnan(temp_mod_rate) % spectrotemporal
+        Hts = analytic_from_spectrum_2D(Hts, 1); % direction doesn't matter for this
+        
+    else
+        assert(isnan(temp_mod_rate) && isnan(spec_mod_rate));
+        
+    end
+end
+    
+    
 % FlushEvents('keyDown');
 % X = ifft2(Hts);
 % fprintf('%.3f Hz, %.3f cyc/oct, %.2f\n',...
