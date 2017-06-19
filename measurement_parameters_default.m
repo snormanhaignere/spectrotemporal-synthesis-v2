@@ -6,13 +6,13 @@ P.max_duration_sec = 12;
 % center frequencies of the temporal modulation filters in Hz
 % 0 indicates a filter with only power at the DC
 % wether or not the rates are lowpass or bandpass (the default)
-P.temp_mod_rates = [0.5,1,2,4,8,0.5,1,2,4,8,16,32,64,128];
+P.temp_mod_rates = [0.5,1,2,4,8, 0.5,1,2,4,8,16,32,64,128];
 P.temp_mod_lowpass = [ones(1,5), zeros(1,9)]; 
 
 % center frequencies of the spectral modulation filters in cyc/octave
 % 0 indicates a filter with only power at the DC
 % wether or not the scales are lowpass or bandpass (the default)
-P.spec_mod_rates = [0.25,0.5,1,0.25,0.5,1,2,4,8];
+P.spec_mod_rates = [0.25,0.5,1, 0.25,0.5,1,2,4,8];
 P.spec_mod_lowpass = [ones(1,3), zeros(1,6)];
 
 % amount of frequency padding, twice the period of the lowest spectral scale

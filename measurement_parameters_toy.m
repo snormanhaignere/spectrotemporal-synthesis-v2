@@ -7,22 +7,22 @@ function P = measurement_parameters_toy
 % temporal modulation rates of second layer
 % and whether the filters are lowpass or bandpass (the default)
 P.temp_mod_rates = [2 2 8];
-P.temp_mod_lowpass = [0 1 1];
+P.temp_mod_lowpass = [1 0 0];
 
 % spectral modulation rates of second layer
 % and whether the filters are lowpass or bandpass (the default)
 P.spec_mod_rates = [0.5 0.5 2];
-P.spec_mod_lowpass = [0 1 1];
+P.spec_mod_lowpass = [1 0 0];
 
 % temporal modulation rates of third layer
 % and whether the filters are lowpass or bandpass (the default)
 P.thirdlayer_temp_mod_rates = [2 1 2];
-P.thirdlayer_temp_mod_lowpass = [0 1 1];
+P.thirdlayer_temp_mod_lowpass = [1 0 0];
 
 % spectral modulation rates of third layer
 % and whether the filters are lowpass or bandpass (the default)
 P.thirdlayer_spec_mod_rates = [0.5 0.25 0.5];
-P.thirdlayer_spec_mod_lowpass = [0 1 1];
+P.thirdlayer_spec_mod_lowpass = [1 0 0];
 
 % number of PCs to compute in the third layer
 P.n_third_layer_PCs = 50;
