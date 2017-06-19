@@ -20,8 +20,7 @@ P.freq_pad_oct = 2/min(P.spec_mod_rates(P.spec_mod_rates>0));
 
 % temporal padding
 % 3x the longest period in the synthesis
-all_temp_rates = [P.temp_mod_rates(P.temp_mod_rates>0), ...
-    P.lowrate_tempfilts_flat_spec, P.lowrate_tempfilts_impulse_spec];
+all_temp_rates = P.temp_mod_rates(P.temp_mod_rates>0);
 P.temp_pad_sec = 3/min(all_temp_rates);
 
 % audio sampling rate
