@@ -5,7 +5,70 @@ function Hts = filt_spectemp_mod(...
 
 % Returns 2D transfer function for a spectrotemporal filter
 % 
+% -- Example --
+% 
+% temp_mod_rate = 2;
+% temp_mod_lowpass = 0;
+% spec_mod_rate = 1;
+% spec_mod_lowpass = 0;
+% 
+% % number of samples
+% % temporal sampling rate in Hz
+% n_sec = 1;
+% P.env_sr = 400;
+% n_temporal_smps = P.env_sr*n_sec; % number of samples
+% 
+% % number of samples
+% % spectral sampling rate in Hz
+% n_octaves = 5;
+% P.logf_spacing = 1/24;
+% spectral_sr_cy_per_oct = 1/P.logf_spacing;
+% n_spectral_smps = spectral_sr_cy_per_oct*n_octaves; % number of samples
+% 
+% % spectral filter transfer function
+% spectemp_filt_tf = filt_spectemp_mod(...
+%     spec_mod_rate, temp_mod_rate,...
+%     n_spectral_smps, n_temporal_smps, P, spec_mod_lowpass, temp_mod_lowpass);
+% 
+% % impulse response
+% spectemp_filt_irf = ifft2(spectemp_filt_tf)';
+% spectemp_filt_irf = circshift(spectemp_filt_irf, [n_spectral_smps/2-1, 0]);
+% 
+% % corresponding frequencies for the spectral filter
+% freqs = ...
+%     [(0:1:n_spectral_smps/2), (-(n_spectral_smps/2-1):1:-1)]' ...
+%     /spectral_sr_cy_per_oct;
+% freqs = circshift(freqs, n_spectral_smps/2-1);
+% 
+% % plot image
+% figure;
+% imagesc(real(spectemp_filt_irf), ...
+%     max(abs(real(spectemp_filt_irf(:))))*[-1 1]);
+% 
+% % modify color map
+% colormap(cbrewer('div','RdBu',256));
+% 
+% % time axis
+% set(gca,'XTick',[0 n_temporal_smps/2 n_temporal_smps],...
+%     'XTickLabel',[0 n_temporal_smps/2 n_temporal_smps]/P.env_sr);
+% xlabel('Time (seconds)');
+% 
+% % frequency axis
+% freqs_to_plot = -floor(n_octaves/2):1:floor(n_octaves/2);
+% yticks = nan(size(freqs_to_plot));
+% for k = 1:length(freqs_to_plot)
+%     [~,yticks(k)] = min(abs(freqs - freqs_to_plot(k)));
+% end
+% set(gca, 'YTick', yticks, ...
+%     'YTickLabel', freqs_to_plot);
+% ylabel('Frequency (Octaves)');
+% 
+% % set font size
+% set(gca, 'FontName', 'Helvetica','FontSize',24)
+% 
 % 2017-06-19: Made it possible to make the filters separable
+% 
+% 2017-06-19: Added an example
 
 % add directory with useful 2D FT scripts
 if ~exist('fft_freqs_from_siglen.m', 'file')
@@ -102,7 +165,6 @@ if complex_filters
         
     else
         assert(isnan(temp_mod_rate) && isnan(spec_mod_rate));
-        
     end
 end
     
