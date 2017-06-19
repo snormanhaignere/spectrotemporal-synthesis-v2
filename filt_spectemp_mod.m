@@ -91,7 +91,7 @@ if nargin < 10
 end
 
 if nargin < 11
-    if lowpass_specmod && lowpass_tempmod
+    if lowpass_specmod || lowpass_tempmod
         separable = true;
     else
         separable = false;
