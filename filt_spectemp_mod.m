@@ -1,9 +1,11 @@
 function Hts = filt_spectemp_mod(...
     spec_mod_rate, temp_mod_rate, F, T, P, ...
     lowpass_specmod, lowpass_tempmod, highpass_specmod, highpass_tempmod, ...
-    complex_filters, )
+    complex_filters, separable)
 
 % Returns 2D transfer function for a spectrotemporal filter
+% 
+% 2017-06-19: Made it possible to make the filters separable
 
 % add directory with useful 2D FT scripts
 if ~exist('fft_freqs_from_siglen.m', 'file')
@@ -23,6 +25,14 @@ end
 
 if nargin < 10
     complex_filters = false;
+end
+
+if nargin < 11
+    if lowpass_specmod && lowpass_tempmod
+        separable = true;
+    else
+        separable = false;
+    end
 end
 
 if ~isnan(temp_mod_rate)
@@ -56,7 +66,7 @@ Hts = Ht * transpose(Hs);
 
 % if the filter is a spectrotemporal filter
 % orient the filter by removing quadrants
-if ~isnan(temp_mod_rate) && ~isnan(spec_mod_rate)
+if ~separable && ~isnan(temp_mod_rate) && ~isnan(spec_mod_rate)
     
     % FFT frequencies excluding DC and nyq
     [f_spec, nyq_index] = fft_freqs_from_siglen(F,1);
