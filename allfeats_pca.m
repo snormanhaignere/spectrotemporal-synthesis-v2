@@ -119,8 +119,6 @@ for i = 1:length(stimuli)
     end
 end
 
-keyboard;
-
 %% Principal components for cochleograms and filtered cochleograms
 
 pca_activations_coch_filtcoch_MAT_file = ...
@@ -264,13 +262,13 @@ if ~exist(pca_activations_third_layer_MAT_file, 'file') || I.overwrite
     [n_timepoints, n_stimuli, n_comp] = size(third_layer_timecourses);
     third_layer_timecourses = ...
         reshape(third_layer_timecourses, n_timepoints * n_stimuli, n_comp);
-    
+            
     % compute envelopes
     modulus_third_layer_timecourses = abs(third_layer_timecourses);
     
     % demean envelopes
-    if I.demean
-        modulus_third_layer_timecourses = bsxfun(...
+    if I.demean_feats
+        modulus_third_layer_timecourses = bsxfun(@minus, ...
             modulus_third_layer_timecourses, mean(modulus_third_layer_timecourses));
     end
         
@@ -284,13 +282,13 @@ if ~exist(pca_activations_third_layer_MAT_file, 'file') || I.overwrite
         pca_modulus_third_layer_timecourses, n_timepoints, n_stimuli, nPC);
     
     % save
-    save(pca_activations_coch_filtcoch_MAT_file, ...
+    save(pca_activations_third_layer_MAT_file, ...
         'pca_modulus_third_layer_timecourses', 'pca_modulus_third_layer_weights', ...
         'third_layer_timecourses', 'third_layer_weights', 'third_layer_eigvals');
     
 else
     
-    load(pca_activations_coch_filtcoch_MAT_file, ...
+    load(pca_activations_third_layer_MAT_file, ...
         'pca_modulus_third_layer_timecourses');
     
 end

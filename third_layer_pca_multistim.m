@@ -21,8 +21,7 @@ n_stimuli = length(filtcoch_MAT_files);
 n_temp_mod_filters = length(P.thirdlayer_temp_mod_rates);
 n_spec_mod_filters = length(P.thirdlayer_spec_mod_rates);
 
-pca_third_layer_MAT_file = [output_directory '/third-layer-pca' ...
-    '-demean' num2str(I.demean_feats) '-std' num2str(I.std_feats) '.mat'];
+pca_third_layer_MAT_file = [output_directory '/third-layer-pca.mat'];
 if ~exist(pca_third_layer_MAT_file, 'file') || I.overwrite
     
     % initialize
@@ -117,9 +116,7 @@ if ~exist(pca_third_layer_MAT_file, 'file') || I.overwrite
             % normalize by number of samples
             C = C/N_all;
             M = M/N_all;
-            
-            keyboard;
-            
+                        
             %             % standard deviations
             %             S = sqrt(diag(C)' - conj(M).*M);
             %             assert(all(isreal(S(:))));
