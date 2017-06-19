@@ -1,7 +1,7 @@
 function Hts = filt_spectemp_mod(...
     spec_mod_rate, temp_mod_rate, F, T, P, ...
     lowpass_specmod, lowpass_tempmod, highpass_specmod, highpass_tempmod, ...
-    complex_filters)
+    complex_filters, )
 
 % Returns 2D transfer function for a spectrotemporal filter
 
@@ -21,7 +21,7 @@ if nargin < 8
     highpass_tempmod = 0;
 end
 
-if nargin < 9
+if nargin < 10
     complex_filters = false;
 end
 
