@@ -18,8 +18,8 @@ I = parse_optInputs_keyvalue(varargin, I);
 
 % number of stimuli and third layer filters
 n_stimuli = length(filtcoch_MAT_files);
-n_temp_mod_filters = length(P.temp_mod_third_layer);
-n_spec_mod_filters = length(P.spec_mod_third_layer);
+n_temp_mod_filters = length(P.thirdlayer_temp_mod_rates);
+n_spec_mod_filters = length(P.thirdlayer_spec_mod_rates);
 
 pca_third_layer_MAT_file = [output_directory '/third-layer-pca' ...
     '-demean' num2str(I.demean_feats) '-std' num2str(I.std_feats) '.mat'];
@@ -35,7 +35,7 @@ if ~exist(pca_third_layer_MAT_file, 'file') || I.overwrite
         for j = 1:n_temp_mod_filters
             
             fprintf('%.1f cyc/oct, %d Hz\n', ...
-                P.spec_mod_third_layer(i), P.temp_mod_third_layer(j)); drawnow;
+                P.thirdlayer_spec_mod_rates(i), P.thirdlayer_temp_mod_rates(j)); drawnow;
             
             N_all = 0;
             for k = 1:n_stimuli
@@ -51,8 +51,16 @@ if ~exist(pca_third_layer_MAT_file, 'file') || I.overwrite
                 filtcoch = abs(filtcoch);
                 
                 % select relevant modulation rates
-                si = abs(P.spec_mod_rates) > P.spec_mod_third_layer(i);
-                ti = abs(P.temp_mod_rates) > P.temp_mod_third_layer(j);
+                if P.thirdlayer_spec_mod_lowpass(i)
+                    si = abs(P.spec_mod_rates) > 0;
+                else
+                    si = abs(P.spec_mod_rates) > P.thirdlayer_spec_mod_rates(i);
+                end
+                if P.thirdlayer_temp_mod_lowpass(j)
+                    ti = abs(P.temp_mod_rates) > 0;
+                else
+                    ti = abs(P.temp_mod_rates) > P.thirdlayer_temp_mod_rates(j);
+                end
                 filtcoch = filtcoch(:,:,si,ti);
                 clear si ti;
                 
@@ -70,8 +78,10 @@ if ~exist(pca_third_layer_MAT_file, 'file') || I.overwrite
                 % complex wavelet
                 complex_filters = true;
                 FT_wavelet = filt_spectemp_mod(...
-                    P.spec_mod_third_layer(i), P.temp_mod_third_layer(j), ...
-                    F, T, P, 0, 0, 0, 0, complex_filters);
+                    P.thirdlayer_spec_mod_rates(i), P.thirdlayer_temp_mod_rates(j), ...
+                    F, T, P, P.thirdlayer_spec_mod_lowpass(i), ...
+                    P.thirdlayer_temp_mod_lowpass(j), ...
+                    0, 0, complex_filters);
                 
                 % apply wavelet to these filters
                 FT_third_layer = bsxfun(@times, FT_filtcoch, FT_wavelet);
@@ -90,8 +100,8 @@ if ~exist(pca_third_layer_MAT_file, 'file') || I.overwrite
                 [~,fname,~] = fileparts(filtcoch_MAT_files{k});
                 third_layer_MAT_files{k,i,j} = ...
                     [output_directory '/third-layer-pca-' fname ...
-                    '-specmod' num2str(P.spec_mod_third_layer(i)) ...
-                    '-tempmod' num2str(P.temp_mod_third_layer(j)) 'Hz.mat'];
+                    '-specmod' num2str(P.thirdlayer_spec_mod_rates(i)) ...
+                    '-tempmod' num2str(P.thirdlayer_temp_mod_rates(j)) 'Hz.mat'];
                 save(third_layer_MAT_files{k,i,j}, 'third_layer', 'dims');
                 
                 % accumulate means and covariances
