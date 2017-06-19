@@ -119,6 +119,8 @@ for i = 1:length(stimuli)
     end
 end
 
+keyboard;
+
 %% Principal components for cochleograms and filtered cochleograms
 
 pca_activations_coch_filtcoch_MAT_file = ...
@@ -242,8 +244,8 @@ end
 %% Third layer principal components
 
 pca_activations_third_layer_MAT_file = ...
-    [output_directory '/pca-activations-coch-filtcoch' ...
-    '-demean' num2str(I.demean_feats) '-std' num2str(I.std_feats) '.mat'];
+    [output_directory '/pca-activations-third-layer' ...
+    '-demean' num2str(I.demean_feats) '.mat'];
 if ~exist(pca_activations_third_layer_MAT_file, 'file') || I.overwrite
     
     filtcoch_MAT_files = cell(1, length(stimuli));
@@ -255,7 +257,7 @@ if ~exist(pca_activations_third_layer_MAT_file, 'file') || I.overwrite
     % principal components per rate
     [third_layer_timecourses, third_layer_weights, third_layer_eigvals] = ...
         third_layer_pca_multistim(filtcoch_MAT_files, nPC, P, output_directory, ...
-        'overwrite', I.overwrite, 'std_feats', I.std_feats);
+        'overwrite', I.overwrite);
     
     % reshape to matrix
     third_layer_timecourses = cat(3, third_layer_timecourses{:});
@@ -296,4 +298,3 @@ end
 % add third layer to output
 pca_timecourses = [pca_timecourses, pca_modulus_third_layer_timecourses];
 model_features = [model_features, {'thirdlayer'}];
-
