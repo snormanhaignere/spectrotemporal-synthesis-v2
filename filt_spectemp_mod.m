@@ -154,17 +154,20 @@ end
 
 % create complex-valued filters via analytic signal
 if complex_filters
-    if ~isnan(temp_mod_rate) && isnan(spec_mod_rate) % temporal
+    temp_mod_bandpass = ~isnan(temp_mod_rate) & ~lowpass_tempmod;
+    spec_mod_bandpass = ~isnan(spec_mod_rate) & ~lowpass_specmod;
+    
+    if temp_mod_bandpass && ~spec_mod_bandpass % temporal
         Hts = analytic_from_spectrum_2D(Hts, 1);
         
-    elseif ~isnan(spec_mod_rate) && isnan(temp_mod_rate) % spectral
+    elseif spec_mod_bandpass && ~temp_mod_bandpass % spectral
         Hts = analytic_from_spectrum_2D(Hts, 2);
         
-    elseif ~isnan(spec_mod_rate) && ~isnan(temp_mod_rate) % spectrotemporal
+    elseif temp_mod_bandpass && spec_mod_bandpass % spectrotemporal
         Hts = analytic_from_spectrum_2D(Hts, 1); % direction doesn't matter for this
         
     else
-        assert(isnan(temp_mod_rate) && isnan(spec_mod_rate));
+        assert(~temp_mod_bandpass && ~spec_mod_bandpass);
     end
 end
     
