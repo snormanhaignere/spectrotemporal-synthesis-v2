@@ -53,3 +53,6 @@ P.logf_spacing = 1/6;
 
 % factor to which cochleogram envelopes are raised
 P.compression_factor = 0.3;
+
+% whether or note the filters are causal in time
+P.causal = true;
