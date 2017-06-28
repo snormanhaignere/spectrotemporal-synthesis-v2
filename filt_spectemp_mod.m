@@ -98,7 +98,7 @@ if nargin < 10
     complex_filters = false;
 end
 
-if nargin < 11
+if nargin < 11 || isempty(separable)
     if lowpass_specmod || lowpass_tempmod
         separable = true;
     else
