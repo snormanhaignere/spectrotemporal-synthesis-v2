@@ -1,10 +1,38 @@
-function H = filt_temp_mod(fc_Hz, N, sr_Hz, LOWPASS, HIGHPASS)
+function H = filt_temp_mod(fc_Hz, N, sr_Hz, LOWPASS, HIGHPASS, CAUSAL)
 
 % Temporal modulation filters
 % derived from gen_cort.m in the nsl toolbox
 % 
 % -- Example --
- 
+% 
+% fc_Hz = 2;
+% sr_Hz = 100;
+% N = 6 * sr_Hz / fc_Hz; % number of samples
+% lowpass = 0;
+% highpass = 0;
+% causal = 0;
+% 
+% % transfer function of the filter
+% H = filt_temp_mod(fc_Hz, N, sr_Hz, lowpass, highpass, causal);
+% h = real(ifft(H));
+% 
+% % plot IRF
+% figure;
+% t = (0:N-1)/sr_Hz;
+% plot(t, h);
+% xlabel('Freq (Hz)'); ylabel('Resp');
+% 
+% % plot TF
+% figure;
+% subplot(2,1,1);
+% mod_f = fft_freqs_from_siglen(N, sr_Hz);
+% plot(fftshift_nyqlast(mod_f), fftshift_nyqlast(abs(H)));
+% xlabel('Mod Freq (Hz)'); ylabel('Magnitude');
+% subplot(2,1,2);
+% plot(fftshift_nyqlast(mod_f), unwrap(fftshift_nyqlast(phase(H))));
+% xlabel('Mod Freq (Hz)'); ylabel('Magnitude');
+% 
+% 2017-06-28: Added non-causal filters
 
 % delta transfer function
 % constant impulse response
@@ -23,12 +51,22 @@ if nargin < 5
     HIGHPASS = 0;
 end
 
+if nargin < 6
+    CAUSAL = true;
+end
+
 % irf
-t = (0:N-1)'/sr_Hz * fc_Hz; % time * fc_Hz
+t = (0:N-1)'/sr_Hz;
+if ~CAUSAL
+    t = t + 2/(3.5 * fc_Hz); % time * fc_Hz
+    ti = t >= N/sr_Hz;
+    t(ti) = mod(t(ti), N/sr_Hz);
+    clear ti;
+end
 if LOWPASS
-    h = t.^2 .* exp(-3.5*t); % gammatone
+    h = (fc_Hz*t).^2 .* exp(-3.5*fc_Hz*t); % gammatone
 else
-    h = sin(2*pi*t) .* t.^2 .* exp(-3.5*t); % gammatone 
+    h = sin(2*pi*t*fc_Hz) .* (t*fc_Hz).^2 .* exp(-3.5*fc_Hz*t); % gammatone 
 end
 
 % magnitude and phase of gammatone

@@ -1,13 +1,13 @@
 function Hts = filt_spectemp_mod(...
     spec_mod_rate, temp_mod_rate, F, T, P, ...
     lowpass_specmod, lowpass_tempmod, highpass_specmod, highpass_tempmod, ...
-    complex_filters, separable)
+    complex_filters, separable, causal)
 
 % Returns 2D transfer function for a spectrotemporal filter
 % 
 % -- Example --
 % 
-% temp_mod_rate = 2;
+% temp_mod_rate = 10;
 % temp_mod_lowpass = 0;
 % spec_mod_rate = 1;
 % spec_mod_lowpass = 0;
@@ -26,9 +26,15 @@ function Hts = filt_spectemp_mod(...
 % n_spectral_smps = spectral_sr_cy_per_oct*n_octaves; % number of samples
 % 
 % % spectral filter transfer function
+% complex_filters = false;
+% separable = true;
+% causal = false;
+% spec_mod_highpass = false; 
+% temp_mod_highpass = false;
 % spectemp_filt_tf = filt_spectemp_mod(...
 %     spec_mod_rate, temp_mod_rate,...
-%     n_spectral_smps, n_temporal_smps, P, spec_mod_lowpass, temp_mod_lowpass);
+%     n_spectral_smps, n_temporal_smps, P, spec_mod_lowpass, temp_mod_lowpass, ...
+%     spec_mod_highpass, temp_mod_highpass, complex_filters, separable, causal);
 % 
 % % impulse response
 % spectemp_filt_irf = ifft2(spectemp_filt_tf)';
@@ -69,6 +75,8 @@ function Hts = filt_spectemp_mod(...
 % 2017-06-19: Made it possible to make the filters separable
 % 
 % 2017-06-19: Added an example
+% 
+% 2017-06-28: Added non-causal filters
 
 % add directory with useful 2D FT scripts
 if ~exist('fft_freqs_from_siglen.m', 'file')
@@ -98,12 +106,16 @@ if nargin < 11
     end
 end
 
+if nargin < 12
+    causal = true;
+end
+
 if ~isnan(temp_mod_rate)
 
     % TF of temporal modulation filter
     Ht = filt_temp_mod(...
         abs(temp_mod_rate), T, P.env_sr, ...
-        lowpass_tempmod, highpass_tempmod);
+        lowpass_tempmod, highpass_tempmod, causal);
         
 else
     
