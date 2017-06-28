@@ -1,4 +1,4 @@
-function filtcoch = coch2filtcoch_allsubbands(coch, P, complex_filters, fourier_domain, causal)
+function filtcoch = coch2filtcoch_allsubbands(coch, P, complex_filters, fourier_domain)
 
 if nargin < 3
     complex_filters = false;
@@ -18,7 +18,7 @@ for i = 1:length(P.spec_mod_rates)
     for j = 1:length(P.temp_mod_rates)
         Hts = filt_spectemp_mod(P.spec_mod_rates(i), P.temp_mod_rates(j), ...
             size(coch,2), size(coch,1), P, P.spec_mod_lowpass(i), ...
-            P.temp_mod_lowpass(j), 0, 0, complex_filters, [], causal);
+            P.temp_mod_lowpass(j), 0, 0, complex_filters, [], P.causal);
         if fourier_domain
             filtcoch(:,:,i,j) = FT_coch .* Hts;
         else
