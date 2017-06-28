@@ -8,7 +8,6 @@ P.max_duration_sec = 12;
 % wether or not the rates are lowpass or bandpass (the default)
 P.temp_mod_rates = [8, 0.5,1,2,4,8,16,32,64,128];
 P.temp_mod_lowpass = [1, zeros(1,9)];
-<<<<<<< HEAD
 
 % temporal modulation rates of third layer
 % and whether the filters are lowpass or bandpass (the default)
