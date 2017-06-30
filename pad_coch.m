@@ -1,4 +1,4 @@
-function [temp_and_freq_padded_coch, ti, fi] = pad_coch(coch, P)
+function [temp_and_freq_padded_coch, ti, fi] = pad_coch(coch, P, pad_value)
 
 % Adds temporal and frequency padding to the cochleogram
 % 
@@ -15,12 +15,18 @@ function [temp_and_freq_padded_coch, ti, fi] = pad_coch(coch, P)
 % 
 % 2017-05-26: Modified function to return temporal and spectral indices needed
 % to remove padding
+% 
+% 2017-06-30: Optional padding value
+
+if nargin < 3 || isempty(pad_value)
+    pad_value = mean(coch(:));
+end
 
 % amount of frequency padding to add in samples
 n_freq_pad_smps = round(P.freq_pad_oct / P.logf_spacing);
 
 % matrix set to the mean of the cochleogram
-F = mean(coch(:)) * ones(size(coch,1), n_freq_pad_smps);
+F = pad_value * ones(size(coch,1), n_freq_pad_smps);
 
 % append frequency padding padding
 freq_padded_coch = [F, coch];
@@ -33,7 +39,7 @@ clear F n_freq_pad_smps;
 n_temp_pad_smps = round(P.env_sr * P.temp_pad_sec);
 
 % matrix set to the mean of the cochleogram
-T = mean(coch(:)) * ones(n_temp_pad_smps, size(freq_padded_coch,2));
+T = pad_value * ones(n_temp_pad_smps, size(freq_padded_coch,2));
 
 % append frequency padding padding
 temp_and_freq_padded_coch = [T; freq_padded_coch];
