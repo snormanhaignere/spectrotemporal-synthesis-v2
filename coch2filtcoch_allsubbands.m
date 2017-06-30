@@ -27,9 +27,9 @@ for i = 1:length(P.spec_mod_rates)
                 size(coch,2), size(coch,1), P, P.spec_mod_lowpass(i), ...
                 P.temp_mod_lowpass(j), 0, 0, complex_filters, [], P.causal);
             if fourier_domain
-                filtcoch(:,:,i,j) = FT_coch .* Hts;
+                filtcoch(:,:,i,j,k) = FT_coch .* Hts;
             else
-                filtcoch(:,:,i,j) = ifft2(FT_coch .* Hts);
+                filtcoch(:,:,i,j,k) = ifft2(FT_coch .* Hts);
             end
         end
     end
