@@ -36,6 +36,7 @@ I.overwrite = false;
 I.keyboard = false;
 I.demean_feats = false;
 I.std_feats = false;
+I.n_layers = 3;
 I = parse_optInputs_keyvalue(varargin, I);
 if I.keyboard
     keyboard;
@@ -238,6 +239,9 @@ else
     
 end
     
+if I.n_layers < 3
+    return;
+end
 
 %% Third layer principal components
 
