@@ -105,7 +105,7 @@ for i = 1:length(stimuli)
         clear complex_filters fourier_domain;
         
         % remove frequency padding
-        filtcoch = filtcoch(:,fi,:,:);
+        filtcoch = filtcoch(:,fi,:,:,:);
         clear fi;
         
         % take modulus
@@ -230,7 +230,7 @@ if ~exist(pca_activations_coch_filtcoch_MAT_file, 'file') || I.overwrite
     end
         
     % save
-    save(pca_activations_coch_filtcoch_MAT_file, 'pca_timecourses', 'pca_weights', 'pca_eigvals', 'model_features');
+    save(pca_activations_coch_filtcoch_MAT_file, 'pca_timecourses', 'pca_weights', 'pca_eigvals', 'model_features', '-v7.3');
     
 else
     
@@ -284,7 +284,7 @@ if ~exist(pca_activations_third_layer_MAT_file, 'file') || I.overwrite
     % save
     save(pca_activations_third_layer_MAT_file, ...
         'pca_modulus_third_layer_timecourses', 'pca_modulus_third_layer_weights', ...
-        'third_layer_timecourses', 'third_layer_weights', 'third_layer_eigvals');
+        'third_layer_timecourses', 'third_layer_weights', 'third_layer_eigvals', '-v7.3');
     
 else
     

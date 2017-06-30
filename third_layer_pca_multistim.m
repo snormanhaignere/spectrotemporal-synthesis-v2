@@ -8,7 +8,7 @@ function [pca_timecourses, pca_weights, pca_eigvals] = ...
 % 2017-06-01: Created, Sam NH
 %
 % 2017-06-13: Added option to demean/standard features before PCA
-% 
+%
 % 2017-06-16: Added spectral filters and possibility of demeaning/standardizing
 
 I.overwrite = false;
@@ -25,152 +25,157 @@ pca_third_layer_MAT_file = [output_directory '/third-layer-pca.mat'];
 if ~exist(pca_third_layer_MAT_file, 'file') || I.overwrite
     
     % initialize
-    pca_weights = cell(n_spec_mod_filters, n_temp_mod_filters);
-    pca_eigvals = cell(n_spec_mod_filters, n_temp_mod_filters);
-    pca_timecourses = cell(n_spec_mod_filters, n_temp_mod_filters);
-    third_layer_MAT_files = cell(n_stimuli, n_spec_mod_filters, n_temp_mod_filters);
+    pca_weights = cell(n_spec_mod_filters, n_temp_mod_filters, 2);
+    pca_eigvals = cell(n_spec_mod_filters, n_temp_mod_filters, 2);
+    pca_timecourses = cell(n_spec_mod_filters, n_temp_mod_filters, 2);
+    third_layer_MAT_files = cell(n_stimuli, n_spec_mod_filters, n_temp_mod_filters, 2);
     
     for i = 1:n_spec_mod_filters
         for j = 1:n_temp_mod_filters
-            
-            fprintf('%.1f cyc/oct, %d Hz\n', ...
-                P.thirdlayer_spec_mod_rates(i), P.thirdlayer_temp_mod_rates(j)); drawnow;
-            
-            N_all = 0;
-            for k = 1:n_stimuli
+            sgn = [-1, 1];
+            for q = 1:2
                 
-                fprintf('Stim %d\n', k); drawnow;
+                fprintf('%.1f cyc/oct, %d Hz, %d\n', ...
+                    P.thirdlayer_spec_mod_rates(i), ...
+                    P.thirdlayer_temp_mod_rates(j), ...
+                    sgn(q)); drawnow;
                 
-                % load filtered cochleogram
-                load(filtcoch_MAT_files{k}, 'F', 'ti');
-                filtcoch = F; clear F;
-                temporal_indices = ti; clear ti;
-                
-                % compute envelopes if complex
-                filtcoch = abs(filtcoch);
-                
-                % select relevant modulation rates
-                if P.thirdlayer_spec_mod_lowpass(i)
-                    si = abs(P.spec_mod_rates) > 0;
-                else
-                    si = abs(P.spec_mod_rates) > P.thirdlayer_spec_mod_rates(i);
-                end
-                if P.thirdlayer_temp_mod_lowpass(j)
-                    ti = abs(P.temp_mod_rates) > 0;
-                else
-                    ti = abs(P.temp_mod_rates) > P.thirdlayer_temp_mod_rates(j);
-                end
-                filtcoch = filtcoch(:,:,si,ti);
-                clear si ti;
-                
-                % 2D fourier transform of filtered envelopes
-                FT_filtcoch = nan(size(filtcoch));
-                for m = 1:size(filtcoch,3)
-                    for l = 1:size(filtcoch,4)
-                        FT_filtcoch(:,:,m,l) = fft2(filtcoch(:,:,m,l));
+                N_all = 0;
+                for k = 1:n_stimuli
+                    
+                    fprintf('Stim %d\n', k); drawnow;
+                    
+                    % load filtered cochleogram
+                    load(filtcoch_MAT_files{k}, 'F', 'ti');
+                    filtcoch = F; clear F;
+                    temporal_indices = ti; clear ti;
+                    
+                    % compute envelopes if complex
+                    filtcoch = abs(filtcoch);
+                    
+                    % select relevant modulation rates
+                    if P.thirdlayer_spec_mod_lowpass(i)
+                        si = abs(P.spec_mod_rates) > 0;
+                    else
+                        si = abs(P.spec_mod_rates) > P.thirdlayer_spec_mod_rates(i);
                     end
+                    if P.thirdlayer_temp_mod_lowpass(j)
+                        ti = abs(P.temp_mod_rates) > 0;
+                    else
+                        ti = abs(P.temp_mod_rates) > P.thirdlayer_temp_mod_rates(j);
+                    end
+                    filtcoch = filtcoch(:,:,si,ti,:);
+                    clear si ti;
+                    
+                    % 2D fourier transform of filtered envelopes
+                    FT_filtcoch = nan(size(filtcoch));
+                    for m = 1:size(filtcoch,3)
+                        for l = 1:size(filtcoch,4)
+                            FT_filtcoch(:,:,m,l) = fft2(filtcoch(:,:,m,l));
+                        end
+                    end
+                    
+                    % dimensionality of second-layer representation
+                    [T, F, ~, ~] = size(filtcoch);
+                    
+                    % complex wavelet
+                    complex_filters = true;
+                    FT_wavelet = filt_spectemp_mod(...
+                        P.thirdlayer_spec_mod_rates(i), sgn(k) * P.thirdlayer_temp_mod_rates(j), ...
+                        F, T, P, P.thirdlayer_spec_mod_lowpass(i), ...
+                        P.thirdlayer_temp_mod_lowpass(j), ...
+                        0, 0, complex_filters);
+                    
+                    % apply wavelet to these filters
+                    FT_third_layer = bsxfun(@times, FT_filtcoch, FT_wavelet);
+                    
+                    % convert back to time domain, still complex
+                    third_layer = ifft2(FT_third_layer);
+                    
+                    % select particular timepoints (e.g. to remove padding)
+                    third_layer = third_layer(temporal_indices,:,:,:);
+                    
+                    % reshape to time x filter
+                    dims = size(third_layer);
+                    third_layer = reshape(third_layer, dims(1), prod(dims(2:end)));
+                    
+                    % save
+                    [~,fname,~] = fileparts(filtcoch_MAT_files{k});
+                    third_layer_MAT_files{k,i,j,q} = ...
+                        [output_directory '/third-layer-pca-' fname ...
+                        '-specmod' num2str(P.thirdlayer_spec_mod_rates(i)) ...
+                        '-tempmod' num2str(P.thirdlayer_temp_mod_rates(j)) 'Hz.mat'];
+                    save(third_layer_MAT_files{k,i,j,q}, 'third_layer', 'dims');
+                    
+                    % accumulate means and covariances
+                    if k == 1
+                        C = zeros(prod(dims(2:end)));
+                        M = zeros(1, prod(dims(2:end)));
+                    end
+                    C = C + third_layer' * third_layer;
+                    M = M + sum(third_layer,1);
+                    N_all = N_all + size(third_layer,1);
                 end
                 
-                % dimensionality of second-layer representation
-                [T, F, ~, ~] = size(filtcoch);
+                % normalize by number of samples
+                C = C/N_all;
+                M = M/N_all;
                 
-                % complex wavelet
-                complex_filters = true;
-                FT_wavelet = filt_spectemp_mod(...
-                    P.thirdlayer_spec_mod_rates(i), P.thirdlayer_temp_mod_rates(j), ...
-                    F, T, P, P.thirdlayer_spec_mod_lowpass(i), ...
-                    P.thirdlayer_temp_mod_lowpass(j), ...
-                    0, 0, complex_filters);
+                %             % standard deviations
+                %             S = sqrt(diag(C)' - conj(M).*M);
+                %             assert(all(isreal(S(:))));
+                %
+                %             % optionally remove effects of means and standard deviations from
+                %             % correlation matrix
+                %             if I.demean_feats
+                %                 CV = C - M' * M;
+                %             else
+                %                 CV = C;
+                %             end
+                %             if I.std_feats
+                %                 CV = (1./(S' * S)) .* CV;
+                %             end
+                CV = C;
+                clear C;
                 
-                % apply wavelet to these filters
-                FT_third_layer = bsxfun(@times, FT_filtcoch, FT_wavelet);
+                % eigen vector decomposition
+                [pca_weights{i,j,q}, pca_eigvals{i,j,q}] = eig(CV);
                 
-                % convert back to time domain, still complex
-                third_layer = ifft2(FT_third_layer);
+                % sort eigenvectors by their eigen value
+                pca_eigvals{i,j,q} = diag(pca_eigvals{i,j,q});
+                [~,xi] = sort(pca_eigvals{i,j,q}, 'descend');
+                pca_weights{i,j,q} = pca_weights{i,j,q}(:,xi);
+                pca_eigvals{i,j,q} = pca_eigvals{i,j,q}(xi);
                 
-                % select particular timepoints (e.g. to remove padding)
-                third_layer = third_layer(temporal_indices,:,:,:);
+                % truncate eigen vectors
+                if size(pca_weights{i,j,q},2) > nPC
+                    pca_weights{i,j,q} = pca_weights{i,j,q}(:,1:nPC);
+                    pca_eigvals{i,j,q} = pca_eigvals{i,j,q}(1:nPC);
+                    ncomp = nPC;
+                else
+                    ncomp = size(pca_weights{i,j,q},2);
+                end
                 
-                % reshape to time x filter
-                dims = size(third_layer);
-                third_layer = reshape(third_layer, dims(1), prod(dims(2:end)));
-                
-                % save
-                [~,fname,~] = fileparts(filtcoch_MAT_files{k});
-                third_layer_MAT_files{k,i,j} = ...
-                    [output_directory '/third-layer-pca-' fname ...
-                    '-specmod' num2str(P.thirdlayer_spec_mod_rates(i)) ...
-                    '-tempmod' num2str(P.thirdlayer_temp_mod_rates(j)) 'Hz.mat'];
-                save(third_layer_MAT_files{k,i,j}, 'third_layer', 'dims');
-                
-                % accumulate means and covariances
+                % initialize
                 if k == 1
-                    C = zeros(prod(dims(2:end)));
-                    M = zeros(1, prod(dims(2:end)));
+                    pca_timecourses{i,j,q} = nan(size(third_layer,1), n_stimuli, ncomp);
                 end
-                C = C + third_layer' * third_layer;
-                M = M + sum(third_layer,1);
-                N_all = N_all + size(third_layer,1);
-            end
-            
-            % normalize by number of samples
-            C = C/N_all;
-            M = M/N_all;
-                        
-            %             % standard deviations
-            %             S = sqrt(diag(C)' - conj(M).*M);
-            %             assert(all(isreal(S(:))));
-            %
-            %             % optionally remove effects of means and standard deviations from
-            %             % correlation matrix
-            %             if I.demean_feats
-            %                 CV = C - M' * M;
-            %             else
-            %                 CV = C;
-            %             end
-            %             if I.std_feats
-            %                 CV = (1./(S' * S)) .* CV;
-            %             end
-            CV = C;
-            clear C;
-            
-            % eigen vector decomposition
-            [pca_weights{i,j}, pca_eigvals{i,j}] = eig(CV);
-            
-            % sort eigenvectors by their eigen value
-            pca_eigvals{i,j} = diag(pca_eigvals{i,j});
-            [~,xi] = sort(pca_eigvals{i,j}, 'descend');
-            pca_weights{i,j} = pca_weights{i,j}(:,xi);
-            pca_eigvals{i,j} = pca_eigvals{i,j}(xi);
-            
-            % truncate eigen vectors
-            if size(pca_weights{i,j},2) > nPC
-                pca_weights{i,j} = pca_weights{i,j}(:,1:nPC);
-                pca_eigvals{i,j} = pca_eigvals{i,j}(1:nPC);
-                ncomp = nPC;
-            else
-                ncomp = size(pca_weights{i,j},2);
-            end
-            
-            % initialize
-            if k == 1
-                pca_timecourses{i,j} = nan(size(third_layer,1), n_stimuli, ncomp);
-            end
-            
-            % project onto PCs
-            for k = 1:n_stimuli
-                load(third_layer_MAT_files{k,i,j}, 'third_layer');
-                %                 if I.demean_feats
-                %                     third_layer = bsxfun(@minus, third_layer, M);
-                %                 end
-                %                 if I.std_feats
-                %                     third_layer = bsxfun(@times, third_layer, 1./S);
-                %                 end
-                pca_timecourses{i,j}(:,k,:) = third_layer * pca_weights{i,j};
+                
+                % project onto PCs
+                for k = 1:n_stimuli
+                    load(third_layer_MAT_files{k,i,j,q}, 'third_layer');
+                    %                 if I.demean_feats
+                    %                     third_layer = bsxfun(@minus, third_layer, M);
+                    %                 end
+                    %                 if I.std_feats
+                    %                     third_layer = bsxfun(@times, third_layer, 1./S);
+                    %                 end
+                    pca_timecourses{i,j,q}(:,k,:) = third_layer * pca_weights{i,j,q};
+                end
             end
         end
     end
-    save(pca_third_layer_MAT_file, 'pca_timecourses', 'pca_weights', 'pca_eigvals');
+    save(pca_third_layer_MAT_file, 'pca_timecourses', 'pca_weights', 'pca_eigvals', '-v7.3');
     
 else
     
