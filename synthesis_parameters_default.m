@@ -1,5 +1,9 @@
 function P = synthesis_parameters_default
 
+% whether to just match the mean and variance of each filter response, or to
+% instead match the full histogram
+P.match_just_mean_and_var = false;
+
 % whether or not to match cochlear marginals, temporal modulation filters, or
 % spectrotemporal modulation filters
 P.match_coch = 1; 

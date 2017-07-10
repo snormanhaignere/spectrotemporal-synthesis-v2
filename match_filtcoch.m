@@ -1,4 +1,5 @@
-function coch_synth_matched = match_filtcoch_hists(coch_orig, coch_synth, P, ti)
+function coch_synth_matched = match_filtcoch(...
+    coch_orig, coch_synth, P, ti, match_mean_and_var)
 
 % Matches the subbands of filtered cochleograms. Much simpler than version 1 and
 % doesn't depend on the nsl toolbox.
@@ -32,8 +33,9 @@ function coch_synth_matched = match_filtcoch_hists(coch_orig, coch_synth, P, ti)
 % 
 % % test reconstruction (i.e. match cochleogram to itself)
 % coch = randn(P.env_sr*4, 9*round(1/P.logf_spacing));
+% match_mean_and_var = true;
 % coch_recon = ...
-%     match_filtcoch_hists(coch, coch, P, 1:P.env_sr*4);
+%     match_filtcoch(coch, coch, P, 1:P.env_sr*4, match_mean_and_var);
 % figure;
 % plot(coch, coch_recon);
 
@@ -72,9 +74,14 @@ for i = 1:n_filters
     filtcoch_orig = real(ifft2(FT_coch_orig .* Hts));
     filtcoch_synth = real(ifft2(FT_coch_synth .* Hts));
     
-    % histogram match, specified subset of temporal indices
-    filtcoch_synth = ...
-        match_coch_hists(filtcoch_orig, filtcoch_synth, ti);
+    % match mean/variance or full histogram for subset of temporal indices
+    if match_mean_and_var
+        filtcoch_synth = ...
+            match_coch_mean_and_var(filtcoch_orig, filtcoch_synth, ti);
+    else
+        filtcoch_synth = ...
+            match_coch_hists(filtcoch_orig, filtcoch_synth, ti);
+    end
     
     % accumulate FT of matched cochleograms
     accum_FT_filtcoch_synth_matched = ...
