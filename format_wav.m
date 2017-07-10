@@ -1,6 +1,9 @@
 function wav = format_wav(wav, wav_sr, P)
 
 % Format a waveform according to the parameters in struct P
+% 
+% 2017-07-10: Removed function that removes DC, and changed variance
+% normalization to 0.01*rms(wav)
 
 % convert to mono if stereo
 wav = mean(wav,2);
@@ -16,6 +19,5 @@ clear duration_sec;
 wav = resample(wav, P.audio_sr, wav_sr);
 clear wav_sr;
 
-% set mean and variance to 1
-wav = wav - mean(wav);
-wav = wav / std(wav);
+% set RMS to 0.01
+wav = 0.01 * wav / rms(wav(:));
