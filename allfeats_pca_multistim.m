@@ -117,7 +117,7 @@ end
 if ~isfield(P_orig, 'return_PCA_timecourses')
     P_orig.return_PCA_timecourses = false;
 end
-
+    
 % whether or not to demean or standarize features prior to computing PCs
 % default is to both standardize and demean
 if ~isfield(P_orig, 'demean_feats')
@@ -146,11 +146,35 @@ if P_orig.keyboard
     keyboard;
 end
 
+%% Strings identifying the parameters of this analysis
+
+analysis_idstring = [...
+    'sr' num2str(P_orig.sr) ...
+    '_tprate' sprintf('-%.2f', P_orig.temp_mod_rates) ...
+    '_tplow' sprintf('%d', P_orig.temp_mod_lowpass) ...
+    '_sprate' sprintf('-%.2f', P_orig.spec_mod_rates) ...
+    '_splow' sprintf('%d', P_orig.spec_mod_lowpass) ...
+    '_fpad' num2str(P_orig.freq_pad_oct) ...
+    '_tpad' num2str(P_orig.freq_pad_oct) ...
+    '_audsr' num2str(P_orig.audio_sr) ...
+    '_envsr' num2str(P_orig.env_sr) ...
+    '_lofreq' num2str(P_orig.lo_freq_hz) ...
+    '_nfilts' num2str(P_orig.n_filts) ...
+    '_over' num2str(P_orig.overcomplete) ...
+    '_freqsr' num2str(1/P_orig.logf_spacing) ...
+    '_exp' num2str(P_orig.compression_factor) ...
+    '_caus' num2str(P_orig.causal) ...
+    ];
+
+pca_idstring = [...
+    'nPCs' num2str(P_orig.nPCs) ...
+    '_demean' num2str(P_orig.demean_feats) ...
+    '_std' num2str(P_orig.std_feats) ...
+    ];
+
 %% Cochleograms and filtered cochleograms
 
-raw_feature_idstring = DataHash(rmfield(P_orig, {'overwrite', 'keyboard', 'std_feats', ...
-    'demean_feats', 'stim_to_compute_PC_weights', 'return_PCA_timecourses', 'nPCs', 'nonlin'}));
-raw_feature_output_directory = [output_directory '/features-' raw_feature_idstring];
+raw_feature_output_directory = [output_directory '/' analysis_idstring '/features'];
 
 % create output directory if it doesn't exist
 if ~exist(raw_feature_output_directory, 'dir'); mkdir(raw_feature_output_directory); end
@@ -295,9 +319,7 @@ end
 
 %% Principal components for cochleograms and filtered cochleograms
 
-pca_idstring = DataHash(rmfield(P_orig, {'overwrite', 'keyboard', ...
-    'stim_to_compute_PC_weights', 'return_PCA_timecourses', 'nonlin'}));
-pca_output_directory = [output_directory '/PCs-' pca_idstring];
+pca_output_directory = [output_directory '/' analysis_idstring '/' pca_idstring];
 
 % create output directory if it doesn't exist
 if ~exist(pca_output_directory, 'dir'); mkdir(pca_output_directory); end
@@ -346,6 +368,7 @@ for i = 1:n_model_features
         % normalize by number of samples
         C = C/N_all;
         M = M/N_all;
+        S = sqrt(diag(C)' - M.^2);
         assert(all(isreal(C)));
         
         % optionally remove effects of means and standard deviations from
@@ -356,7 +379,6 @@ for i = 1:n_model_features
             CV = C;
         end
         if P_orig.std_feats
-            S = sqrt(diag(C)' - M.^2);
             CV = (1./(S' * S)) .* CV;
         else
             CV = CV;
