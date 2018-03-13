@@ -93,6 +93,8 @@ function [pca_timecourse_MAT_files, pca_weight_MAT_files, model_features, ...
 
 %% Optional arguments
 
+addpath(genpath(fileparts(which(mfilename))));
+
 % add the required parameters to the parameter structure
 P_orig.nPCs = nPCs;
 P_orig.sr = sr;
@@ -148,22 +150,28 @@ end
 
 %% Strings identifying the parameters of this analysis
 
-analysis_idstring = [...
-    'sr' num2str(P_orig.sr) ...
+coch_idstring = [...
+    'coch' ...
+    '_audsr' num2str(P_orig.audio_sr) ...
+    '_nfilts' num2str(P_orig.n_filts) ...
+    '_lofreq' num2str(P_orig.lo_freq_hz) ...
+    '_over' num2str(P_orig.overcomplete) ...
+    '_exp' num2str(P_orig.compression_factor) ...
+    '_envsr' num2str(P_orig.env_sr) ...
+    '_freqsr' num2str(1/P_orig.logf_spacing) ...
+    '_tpad' num2str(P_orig.temp_pad_sec) ...
+    '_outsr' num2str(P_orig.sr) ...
+    ];
+
+modulation_idstring = [...
+    'mod' ...
     '_tprate' sprintf('-%.2f', P_orig.temp_mod_rates) ...
     '_tplow' sprintf('%d', P_orig.temp_mod_lowpass) ...
     '_sprate' sprintf('-%.2f', P_orig.spec_mod_rates) ...
     '_splow' sprintf('%d', P_orig.spec_mod_lowpass) ...
     '_fpad' num2str(P_orig.freq_pad_oct) ...
-    '_tpad' num2str(P_orig.freq_pad_oct) ...
-    '_audsr' num2str(P_orig.audio_sr) ...
-    '_envsr' num2str(P_orig.env_sr) ...
-    '_lofreq' num2str(P_orig.lo_freq_hz) ...
-    '_nfilts' num2str(P_orig.n_filts) ...
-    '_over' num2str(P_orig.overcomplete) ...
-    '_freqsr' num2str(1/P_orig.logf_spacing) ...
-    '_exp' num2str(P_orig.compression_factor) ...
     '_caus' num2str(P_orig.causal) ...
+    '_' coch_idstring
     ];
 
 pca_idstring = [...
@@ -174,10 +182,10 @@ pca_idstring = [...
 
 %% Cochleograms and filtered cochleograms
 
-raw_feature_output_directory = [output_directory '/' analysis_idstring '/features'];
-
-% create output directory if it doesn't exist
-if ~exist(raw_feature_output_directory, 'dir'); mkdir(raw_feature_output_directory); end
+coch_output_directory = [output_directory '/' coch_idstring];
+modulation_output_directory = [output_directory '/' modulation_idstring];
+if ~exist(coch_output_directory, 'dir'); mkdir(coch_output_directory); end
+if ~exist(modulation_output_directory, 'dir'); mkdir(modulation_output_directory); end
 
 % loop through stimuli
 for i = 1:length(stimuli)
@@ -185,17 +193,18 @@ for i = 1:length(stimuli)
     % separate file name from extension
     [~, fname, ~] = fileparts(stimuli{i});
     
-    % check if the features have already been computed
-    all_features_computed = true;
-    coch_MAT_file = [raw_feature_output_directory '/coch_' fname '.mat'];
+    % MAT file to save cochleogram
+    coch_MAT_file = [coch_output_directory '/coch_' fname '.mat'];
+
+    % MAT file for modulation representations
     filtcoch_MAT_files = cell(1, length(modulation_types));
-    n_model_features = length(modulation_types)+1;
-    model_features = cell(1, n_model_features);
-    model_features{1} = 'coch';
     for j = 1:length(modulation_types)
-        model_features{j+1} = [modulation_types{j} '_' P_orig.nonlin];
-        filtcoch_MAT_files{j} = [raw_feature_output_directory '/' modulation_types{j} '_' P_orig.nonlin '_' fname '.mat'];
+        filtcoch_MAT_files{j} = [modulation_output_directory '/' ...
+            modulation_types{j} '_' P_orig.nonlin '_' fname '.mat'];
     end
+    
+    % check if the files already exist
+    all_features_computed = true;
     files_to_check = [{coch_MAT_file}, filtcoch_MAT_files];
     for j = 1:length(files_to_check)
         if ~exist(files_to_check{j}, 'file');
@@ -203,8 +212,13 @@ for i = 1:length(stimuli)
         end
     end
     
-    % if features not computed, need to compute cochleogram
-    if ~all_features_computed || P_orig.overwrite
+    % check if the features have already all been computed
+    if all_features_computed && ~P_orig.overwrite
+        continue;
+    end
+    
+    % format cochleogram and save
+    if ~exist(coch_MAT_file, 'file') || P_orig.overwrite
         
         % print file name
         fprintf('\n\n%d: %s\n', i, fname); drawnow;
@@ -230,11 +244,6 @@ for i = 1:length(stimuli)
         fprintf('Computing cochleogram\n'); drawnow;
         [coch, P_coch] = wav2coch_without_filts(y, P_orig);
         
-    end
-    
-    % format cochleogram and save
-    if ~exist(coch_MAT_file, 'file') || P_orig.overwrite
-        
         % remove temporal padding
         F = coch((1:wav_dur_sec*P_coch.env_sr), :);
         
@@ -243,10 +252,19 @@ for i = 1:length(stimuli)
             F = resample_ndarray(F, P_orig.sr, P_coch.env_sr, 1);
         end
         
+        % save
         P = P_coch;
         save(coch_MAT_file, 'F', 'P');
         clear F P;
         
+    else
+        
+        % load
+        save(coch_MAT_file, 'F', 'P');
+        coch = F;
+        P_coch = P;
+        clear F P;
+
     end
     
     % compute second layer filters from cochleogram
@@ -319,10 +337,19 @@ end
 
 %% Principal components for cochleograms and filtered cochleograms
 
-pca_output_directory = [output_directory '/' analysis_idstring '/' pca_idstring];
-
-% create output directory if it doesn't exist
-if ~exist(pca_output_directory, 'dir'); mkdir(pca_output_directory); end
+% feature file names and directory
+n_model_features = length(modulation_types)+1;
+model_features = cell(1, n_model_features);
+feature_directories = cell(1, n_model_features);
+pca_output_directories = cell(1, n_model_features);
+model_features{1} = 'coch';
+feature_directories{1} = coch_output_directory;
+pca_output_directories{1} = [output_directory '/' coch_idstring '_' pca_idstring];
+for j = 1:length(modulation_types)
+    model_features{j+1} = [modulation_types{j} '_' P_orig.nonlin];
+    feature_directories{j+1} = modulation_output_directory;
+    pca_output_directories{j+1} = [output_directory '/' modulation_idstring '_' pca_idstring];
+end
 
 % initialize PCA matrices
 pca_weights_allmodels = cell(1, n_model_features);
@@ -337,7 +364,8 @@ pca_timecourse_MAT_files = cell(length(stimuli), n_model_features);
 for i = 1:n_model_features
     
     % PCA weights from covariance
-    pca_weight_MAT_files{i} = [pca_output_directory '/' model_features{i} '_PCA_weights'];
+    if ~exist(pca_output_directories{i}, 'dir'); mkdir(pca_output_directories{i}); end
+    pca_weight_MAT_files{i} = [pca_output_directories{i} '/' model_features{i} '_PCA_weights'];
     if ~exist(pca_weight_MAT_files{i}, 'file') || P_orig.overwrite
         
         % un-normalized covariance matrix
@@ -347,7 +375,7 @@ for i = 1:n_model_features
             % load and format
             [~,fname,~] = fileparts(P_orig.stim_to_compute_PC_weights{j});
             fprintf('feat cov: %s, %s\n', model_features{i}, P_orig.stim_to_compute_PC_weights{j}); drawnow;
-            load([raw_feature_output_directory '/' model_features{i} '_' fname '.mat'], 'F', 'P');
+            load([feature_directories{i} '/' model_features{i} '_' fname '.mat'], 'F', 'P');
             dims = size(F);
             F = reshape(F, dims(1), prod(dims(2:end)));
             
@@ -409,13 +437,13 @@ for i = 1:n_model_features
     for j = 1:length(stimuli)
         
         [~,fname,~] = fileparts(stimuli{j});
-        pca_timecourse_MAT_files{j,i} = [pca_output_directory '/' ...
+        pca_timecourse_MAT_files{j,i} = [pca_output_directories{i} '/' ...
             model_features{i} '_PCA_timecourses_' num2str(min(size(pca_weights,2), P_orig.nPCs)) '_' fname '.mat'];
         if ~exist(pca_timecourse_MAT_files{j,i}, 'file') || P_orig.overwrite
             
             % load and format
             fprintf('pca timecourses: %s, %s\n', model_features{i}, stimuli{j}); drawnow;
-            load([raw_feature_output_directory '/' model_features{i} '_' fname '.mat'], 'F', 'P');
+            load([feature_directories{i} '/' model_features{i} '_' fname '.mat'], 'F', 'P');
             dims = size(F);
             F = reshape(F, dims(1), prod(dims(2:end)));
             
