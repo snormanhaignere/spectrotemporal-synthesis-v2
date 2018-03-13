@@ -1,4 +1,4 @@
-function H = filt_temp_mod(fc_Hz, N, sr_Hz, LOWPASS, HIGHPASS, CAUSAL, BW, randomphase)
+function H = filt_temp_mod(fc_Hz, N, sr_Hz, LOWPASS, HIGHPASS, CAUSAL, BW)
 
 % Temporal modulation filters
 % derived from gen_cort.m in the nsl toolbox
@@ -60,10 +60,6 @@ end
     
 if nargin < 7
     BW = 1;
-end
-
-if nargin < 8
-    randomphase = false;
 end
 
 % irf
