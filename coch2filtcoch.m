@@ -1,13 +1,61 @@
-function filtcoch = coch2filtcoch(coch, spec_mod_rate, temp_mod_rate, P)
+function filtcoch = coch2filtcoch(coch, spec_mod_rate, temp_mod_rate, P, ...
+    spec_mod_lowpass, temp_mod_lowpass, complex_filters, separable, causal, ...
+    fourier_domain, spec_BW, temp_BW, spec_wavelet)
 
-% time x frequency
-[T,F] = size(coch);
+if nargin < 5 || isempty(spec_mod_lowpass)
+    spec_mod_lowpass = false;
+end
 
-% 2D fourier transforms
+if nargin < 6 || isempty(spec_mod_lowpass)
+    temp_mod_lowpass = false;
+end
+
+if nargin < 7
+    complex_filters = false;
+end
+
+if nargin < 8
+    separable = true;
+end
+
+if nargin < 9
+    causal = true;
+end
+
+if nargin < 10
+    fourier_domain = false;
+end
+
+if nargin < 11
+    spec_BW = 1;
+end
+
+if nargin < 12
+    temp_BW = 1;
+end
+
+if nargin < 13
+    spec_wavelet = 'mexicanhat';
+end
+
+% FT of the cochleogram
 FT_coch = fft2(coch);
 
-% filter transfer function
-Hts = filt_spectemp_mod(spec_mod_rate, temp_mod_rate, F, T, P);
+% impulse response
+Hts = filt_spectemp_mod(...
+    spec_mod_rate, temp_mod_rate, ...
+    size(coch,2), size(coch,1), P, spec_mod_lowpass, ...
+    temp_mod_lowpass, 0, 0, complex_filters, separable, causal, ...
+    spec_BW, temp_BW, spec_wavelet);
 
-% apply filter and revert to cochleogram domain
-filtcoch = real(ifft2(FT_coch .* Hts));
+% convolve
+if fourier_domain
+    filtcoch = FT_coch .* Hts;
+else
+    filtcoch = ifft2(FT_coch .* Hts);
+end
+
+% ensure real (only needed because of numerical issues)
+if ~complex_filters && ~fourier_domain
+    filtcoch = real(filtcoch);
+end

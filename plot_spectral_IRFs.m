@@ -29,6 +29,8 @@ end
 
 P = synthesis_parameters_default;
 P.spec_mod_rates = P.spec_mod_rates(P.spec_mod_rates>0);
+wavelet = 'mexicanhat';
+BW = 1;
 
 %% Temporal impulse responses
 
@@ -46,7 +48,7 @@ for i = 1:length(P.spec_mod_rates)
     
     % transfer function of the filter
     filt_tf = filt_spec_mod(...
-        P.spec_mod_rates(i), n_spectral_smps, specral_sr_cyc_per_oct, 0, 0);
+        P.spec_mod_rates(i), n_spectral_smps, specral_sr_cyc_per_oct, 0, 0, BW, wavelet);
     
     % impulse response
     filt_irf = circshift(real(ifft(filt_tf)), n_spectral_smps/2-1);

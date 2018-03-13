@@ -29,6 +29,9 @@ end
 
 P = synthesis_parameters_default;
 P.temp_mod_rates = P.temp_mod_rates(P.temp_mod_rates>0);
+lowpass = false;
+highpass = false;
+BW = 2;
 
 %% Temporal impulse responses
 
@@ -46,7 +49,7 @@ for i = 1:length(P.temp_mod_rates)
    
     % transfer function of the filter
     filt_tf = filt_temp_mod(...
-        P.temp_mod_rates(i), n_temporal_smps, temporal_sr_Hz, 0, 0);
+        P.temp_mod_rates(i), n_temporal_smps, temporal_sr_Hz, 0, 0, true, BW);
         
     % impulse response
     filt_irf = ifft(filt_tf);

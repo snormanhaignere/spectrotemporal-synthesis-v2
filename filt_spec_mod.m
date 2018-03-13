@@ -1,4 +1,4 @@
-function H = filt_spec_mod(fc_cycPoct, N, sr_oct, LOWPASS, HIGHPASS)
+function H = filt_spec_mod(fc_cycPoct, N, sr_oct, LOWPASS, HIGHPASS, BW, WAVELET)
 
 % H = filt_spec_mod(fc_cycPoct, N, sr_oct, LOWPASS, HIGHPASS)
 % 
@@ -31,6 +31,9 @@ function H = filt_spec_mod(fc_cycPoct, N, sr_oct, LOWPASS, HIGHPASS)
 % f = (0:n_spectral_smps-1)/sr_oct;
 % plot(f, ifft(H));
 % xlabel('Freq (Hz)'); ylabel('Resp');
+% 
+% 2018-03-13: Updated to allow for a morlet wavelet instead of a mexican hat
+% wavelet. Also made it possible to alter the bandwidth for the morlet wavelet
 
 % delta transfer function
 % constant impulse response
@@ -47,6 +50,21 @@ end
 
 if nargin < 5
     HIGHPASS = 0;
+end
+
+if nargin < 6
+    BW = 1;
+end
+
+if nargin < 7
+    WAVELET = 'mexicanhat';
+end
+
+if strcmp(WAVELET, 'mexicanhat')
+    if BW ~= 1
+        error('spectemp:input',...
+        'Can''t change bandwidth of the mexican hat\nBW must be 1');
+    end
 end
 
 % index of the nyquist if present (i.e. if N is even)
@@ -66,19 +84,50 @@ end
 % C1 = 1/2/.3/.3;
 % H0 = exp(-C1*(R1-1).^2) + exp(-C1*(R1+1).^2);
 
-% transfer function for positive frequencies
-% fc is the center frequency
-if LOWPASS
-    per = 1/abs(fc_cycPoct);
-    sig = per/2; % period = 2*sigma
-    a = 1/(sig.^2);
-    H_pos_freqs = exp(-(pi^2) * pos_freqs.^2 / a);
-    % see: http://mathworld.wolfram.com/FourierTransformGaussian.html
-else
-    f2 = pos_freqs.^2/abs(fc_cycPoct).^2;
-    H_pos_freqs = f2 .* exp(-f2);
+% Note that in the signal domain the mexican hat filter equals:
+% (1 - 2*(fc_cycPoct*pi*pos_freqs).^2) .* exp(-(fc_cycPoct*pi*pos_freqs).^2)
+
+switch WAVELET
+
+    case 'mexicanhat'
+        
+        % transfer function for positive frequencies
+        % fc is the center frequency
+        if LOWPASS
+            per = 1/abs(fc_cycPoct);
+            sig = per/2; % period = 2*sigma
+            a = 1/(sig.^2);
+            H_pos_freqs = exp(-(pi^2) * pos_freqs.^2 / a);
+            % see: http://mathworld.wolfram.com/FourierTransformGaussian.html
+        else
+            f2 = (pos_freqs).^2 / abs(fc_cycPoct).^2;
+            H_pos_freqs = f2 .* exp(-f2);
+        end
+        clear R1;
+        
+    case 'morlet'
+        
+        % signal domain
+        center_bin = (floor(N/2)+1);
+        f = ((1:N) - center_bin)/sr_oct;
+        if LOWPASS
+            h = exp(-(fc_cycPoct*f*BW).^2);
+        else
+            h = cos(2*pi*f*fc_cycPoct) .* exp(-(fc_cycPoct*f*BW).^2);
+        end
+        
+        % shift to create causal filter
+        h = circshift(h, [0, -(center_bin-1)]);
+        
+        % frequency domain magnitude and phase of gammatone
+        H0 = real(fft(h));
+        H_pos_freqs = H0(1:nyq_index)';        
+        
+    otherwise
+        
+        error('No matching wavelet for %s', WAVELET);
+        
 end
-clear R1;
 
 % normalize maximum frequency
 H_pos_freqs = H_pos_freqs / max(H_pos_freqs);

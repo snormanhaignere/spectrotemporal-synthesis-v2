@@ -1,4 +1,4 @@
-function H = filt_temp_mod(fc_Hz, N, sr_Hz, LOWPASS, HIGHPASS, CAUSAL)
+function H = filt_temp_mod(fc_Hz, N, sr_Hz, LOWPASS, HIGHPASS, CAUSAL, BW, randomphase)
 
 % Temporal modulation filters
 % derived from gen_cort.m in the nsl toolbox
@@ -33,6 +33,9 @@ function H = filt_temp_mod(fc_Hz, N, sr_Hz, LOWPASS, HIGHPASS, CAUSAL)
 % xlabel('Mod Freq (Hz)'); ylabel('Magnitude');
 % 
 % 2017-06-28: Added non-causal filters
+% 
+% 2018-03-13: Made it possible to change the bandwidths of the filter by
+% altering the duration/extent of the envelope
 
 % delta transfer function
 % constant impulse response
@@ -54,6 +57,14 @@ end
 if nargin < 6
     CAUSAL = true;
 end
+    
+if nargin < 7
+    BW = 1;
+end
+
+if nargin < 8
+    randomphase = false;
+end
 
 % irf
 t = (0:N-1)'/sr_Hz;
@@ -64,9 +75,9 @@ if ~CAUSAL
     clear ti;
 end
 if LOWPASS
-    h = (fc_Hz*t).^2 .* exp(-3.5*fc_Hz*t); % gammatone
+    h = (fc_Hz*t*BW).^2 .* exp(-3.5*fc_Hz*t*BW); % gammatone
 else
-    h = sin(2*pi*t*fc_Hz) .* (t*fc_Hz).^2 .* exp(-3.5*fc_Hz*t); % gammatone 
+    h = sin(2*pi*t*fc_Hz) .* (t*fc_Hz*BW).^2 .* exp(-3.5*fc_Hz*t*BW); % gammatone 
 end
 
 % magnitude and phase of gammatone

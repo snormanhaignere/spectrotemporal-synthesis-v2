@@ -1,7 +1,7 @@
 function Hts = filt_spectemp_mod(...
     spec_mod_rate, temp_mod_rate, F, T, P, ...
     lowpass_specmod, lowpass_tempmod, highpass_specmod, highpass_tempmod, ...
-    complex_filters, separable, causal)
+    complex_filters, separable, causal, spec_BW, temp_BW, spec_wavelet)
 
 % Returns 2D transfer function for a spectrotemporal filter
 % 
@@ -84,30 +84,48 @@ if ~exist('fft_freqs_from_siglen.m', 'file')
     addpath(genpath([directory_containing_this_file '/2DFT']));
 end
 
-if nargin < 6 
+if nargin < 6 || isempty(lowpass_specmod)
     lowpass_specmod = 0;
+end
+
+if nargin < 7 || isempty(lowpass_tempmod)
     lowpass_tempmod = 0;
 end
 
-if nargin < 8
+if nargin < 8 || isempty(highpass_specmod)
     highpass_specmod = 0;
+end
+
+if nargin < 9 || isempty(highpass_tempmod)
     highpass_tempmod = 0;
 end
 
-if nargin < 10
+if nargin < 10 || isempty(complex_filters)
     complex_filters = false;
 end
 
 if nargin < 11 || isempty(separable)
-    if lowpass_specmod || lowpass_tempmod
-        separable = true;
-    else
-        separable = false;
-    end
+    separable = false;
 end
 
-if nargin < 12
+if isnan(temp_mod_rate) || isnan(spec_mod_rate) || lowpass_specmod || lowpass_tempmod
+    separable = true;
+end
+
+if nargin < 12 || isempty(causal)
     causal = true;
+end
+
+if nargin < 13 || isempty(spec_BW)
+    spec_BW = 1;
+end
+
+if nargin < 14 || isempty(temp_BW)
+    temp_BW = 1;
+end
+
+if nargin < 15 || isempty(spec_wavelet)
+    spec_wavelet = 'mexicanhat';
 end
 
 if ~isnan(temp_mod_rate)
@@ -115,11 +133,12 @@ if ~isnan(temp_mod_rate)
     % TF of temporal modulation filter
     Ht = filt_temp_mod(...
         abs(temp_mod_rate), T, P.env_sr, ...
-        lowpass_tempmod, highpass_tempmod, causal);
+        lowpass_tempmod, highpass_tempmod, causal, temp_BW);
         
 else
     
     Ht = ones(T,1);
+    separable = true;
     
 end
 
@@ -128,11 +147,12 @@ if ~isnan(spec_mod_rate)
     % TF of spectral modulation filter
     Hs = filt_spec_mod(...
         spec_mod_rate, F, (1/P.logf_spacing),...
-        lowpass_specmod, highpass_specmod);
+        lowpass_specmod, highpass_specmod, spec_BW, spec_wavelet);
         
 else
     
     Hs = ones(F,1);
+    separable = true;
     
 end
 
@@ -166,8 +186,8 @@ end
 
 % create complex-valued filters via analytic signal
 if complex_filters
-    temp_mod_bandpass = ~isnan(temp_mod_rate) & ~lowpass_tempmod;
-    spec_mod_bandpass = ~isnan(spec_mod_rate) & ~lowpass_specmod;
+    temp_mod_bandpass = ~isnan(temp_mod_rate) && ~isnan(lowpass_tempmod) && ~lowpass_tempmod;
+    spec_mod_bandpass = ~isnan(spec_mod_rate) && ~isnan(lowpass_specmod) && ~lowpass_specmod;
     
     if temp_mod_bandpass && ~spec_mod_bandpass % temporal
         Hts = analytic_from_spectrum_2D(Hts, 1);

@@ -28,6 +28,7 @@ if ~exist(figure_directory,'dir')
 end
 
 P = measurement_parameters_default;
+BW = 1;
 
 %% Temporal impulse responses
 
@@ -43,7 +44,7 @@ for i = 1:length(P.temp_mod_rates)
     % transfer function of the filter
     filt_tf = filt_temp_mod(...
         P.temp_mod_rates(i), n_temporal_smps, temporal_sr_Hz, ...
-        P.temp_mod_lowpass(i), 0);
+        P.temp_mod_lowpass(i), 0, true, BW);
 
     % nyquist
     max_pos_freq = ceil((n_temporal_smps+1)/2);

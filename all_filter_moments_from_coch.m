@@ -70,7 +70,9 @@ for i = 1:n_spec_mod_rates
         
         % transfer function of spectrotemporal filter
         Hts = filt_spectemp_mod(...
-            spec_mod_rates(i), temp_mod_rates(j), F, T, P);
+            spec_mod_rates(i), temp_mod_rates(j), F, T, P,...
+            [], [], [], [], [], [], [], ...
+            P.spec_BW, P.temp_BW, P.spec_wavelet);
         
         % whether or not to compute envelopes of the signal
         if envelopes

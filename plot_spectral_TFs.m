@@ -28,11 +28,12 @@ if ~exist(figure_directory,'dir')
 end
 
 P = measurement_parameters_default;
+wavelet = 'mexicanhat';
+BW = 1;
 
 %% Temporal impulse responses
 
 figure;
-
 for i = 1:length(P.spec_mod_rates)
             
     % number of samples
@@ -43,7 +44,8 @@ for i = 1:length(P.spec_mod_rates)
     
     % transfer function of the filter
     filt_tf = filt_spec_mod(...
-        P.spec_mod_rates(i), n_spectral_smps, specral_sr_cyc_per_oct, P.spec_mod_lowpass(i), 0);
+        P.spec_mod_rates(i), n_spectral_smps, specral_sr_cyc_per_oct, ...
+        P.spec_mod_lowpass(i), 0, BW, wavelet);
     
     % nyquist
     max_pos_freq = ceil((n_spectral_smps+1)/2);
