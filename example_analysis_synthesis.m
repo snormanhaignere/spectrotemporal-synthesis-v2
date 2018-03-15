@@ -32,7 +32,7 @@ addpath('2DFT');
 
 % parameters
 spec_mod_rate = 2; % cycles per octave
-temp_mod_rate = 8; % Hertz
+temp_mod_rate = 16; % Hertz
 spec_mod_lowpass = false;
 temp_mod_lowpass = false;
 complex_filters = false;
@@ -42,11 +42,19 @@ separable = false;
 spec_BW = 1;
 temp_BW = 1;
 spec_wavelet = 'morlet';
+temp_wavelet = 'gammatone';
+spec_random_phase = true;
+temp_random_phase = true;
+spec_random_filt = true;
+temp_random_filt = true;
+random_seed = 4;
 
 % result of convolution with the impulse response
 coch_subband = coch2filtcoch(coch, spec_mod_rate, temp_mod_rate, P, ...
     spec_mod_lowpass, temp_mod_lowpass, complex_filters, separable, causal, ...
-    fourier_domain, spec_BW, temp_BW, spec_wavelet);
+    fourier_domain, spec_BW, temp_BW, spec_wavelet, temp_wavelet, ...
+    spec_random_phase, temp_random_phase, ...
+    spec_random_filt, temp_random_filt, random_seed);
 
 % plot subband
 figure;
@@ -57,7 +65,9 @@ Hts_FT = filt_spectemp_mod(...
     spec_mod_rate, temp_mod_rate, ...
     size(coch,2), size(coch,1), P, spec_mod_lowpass, ...
     temp_mod_lowpass, 0, 0, complex_filters, separable, causal, ...
-    spec_BW, temp_BW, spec_wavelet);
+    spec_BW, temp_BW, spec_wavelet, temp_wavelet, ...
+    spec_random_phase, temp_random_phase, ...
+    spec_random_filt, temp_random_filt, random_seed);
 
 % impulse response in signal domain
 Hts_signal = ifft2(Hts_FT)';

@@ -1,4 +1,5 @@
-function H = filt_spec_mod(fc_cycPoct, N, sr_oct, LOWPASS, HIGHPASS, BW, WAVELET)
+function H = filt_spec_mod(fc_cycPoct, N, sr_oct, LOWPASS, HIGHPASS, BW, ...
+    WAVELET, RANDOM_PHASE, RANDOM_FILT, RANDOM_SEED)
 
 % H = filt_spec_mod(fc_cycPoct, N, sr_oct, LOWPASS, HIGHPASS)
 % 
@@ -60,11 +61,42 @@ if nargin < 7
     WAVELET = 'mexicanhat';
 end
 
+if nargin < 8
+    RANDOM_PHASE = false;
+end
+
+if nargin < 9
+    RANDOM_FILT = false;
+end
+
+if nargin < 10
+    RANDOM_SEED = 1;
+end
+
+ResetRandStream2(RANDOM_SEED + round(fc_cycPoct*1000) + 1);
+
 if strcmp(WAVELET, 'mexicanhat')
     if BW ~= 1
         error('spectemp:input',...
         'Can''t change bandwidth of the mexican hat\nBW must be 1');
     end
+end
+
+if RANDOM_PHASE || RANDOM_FILT
+    N_orig = N;
+    N = ceil(sr_oct * (2/fc_cycPoct)/BW);
+end
+
+if RANDOM_FILT
+    if N >= N_orig
+        h = randn(N_orig,1);
+    else
+        N_pad = N_orig-N;
+        h = randn(N,1);
+        h = [h(1:ceil(N/2)); zeros(ceil(N_pad),1); h(ceil(N/2)+1:end)]; % not exact
+    end
+    H = fft(h);
+    return
 end
 
 % index of the nyquist if present (i.e. if N is even)
@@ -143,6 +175,10 @@ if HIGHPASS
         ones(length(H_pos_freqs)-maxi, 1);
 end
 
+if RANDOM_PHASE
+    H_pos_freqs = abs(H_pos_freqs) .* exp(sqrt(-1) * unifrnd(0, 2*pi, size(H_pos_freqs)));
+end
+
 % negative frequencies
 if mod(N,2)==0 % nyquist present
     H_neg_freqs = conj(flip(H_pos_freqs(2:nyq_index-1)));
@@ -152,3 +188,18 @@ end
 
 % combine positive and negative frequencies
 H = [H_pos_freqs; H_neg_freqs];
+
+
+if RANDOM_PHASE
+    h = real(ifft(H));
+    if N >= N_orig
+        h = h(1:N_orig);
+    else
+        N_pad = N_orig-N;
+        h = [h(1:ceil(N/2)); zeros(ceil(N_pad),1); h(ceil(N/2)+1:end)]; % not exact
+    end
+    H = fft(h);
+end
+
+
+

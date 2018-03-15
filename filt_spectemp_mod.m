@@ -1,7 +1,9 @@
 function Hts = filt_spectemp_mod(...
     spec_mod_rate, temp_mod_rate, F, T, P, ...
     lowpass_specmod, lowpass_tempmod, highpass_specmod, highpass_tempmod, ...
-    complex_filters, separable, causal, spec_BW, temp_BW, spec_wavelet)
+    complex_filters, separable, causal, spec_BW, temp_BW, ...
+    spec_wavelet, temp_wavelet, spec_random_phase, temp_random_phase, ...
+    spec_random_filt, temp_random_filt, random_seed)
 
 % Returns 2D transfer function for a spectrotemporal filter
 % 
@@ -128,12 +130,39 @@ if nargin < 15 || isempty(spec_wavelet)
     spec_wavelet = 'mexicanhat';
 end
 
+if nargin < 16 || isempty(temp_wavelet)
+    temp_wavelet = 'gammatone';
+end
+
+if nargin < 17 || isempty(spec_random_phase)
+    spec_random_phase = false;
+end
+
+if nargin < 18 || isempty(temp_random_phase)
+    temp_random_phase = false;
+end
+
+if nargin < 19 || isempty(spec_random_filt)
+    spec_random_filt = false;
+end
+
+if nargin < 20 || isempty(temp_random_filt)
+    temp_random_filt = false;
+end
+
+if nargin < 21 || isempty(random_seed)
+    random_seed = false;
+end
+
+temp_random_phase
+
 if ~isnan(temp_mod_rate)
 
     % TF of temporal modulation filter
     Ht = filt_temp_mod(...
         abs(temp_mod_rate), T, P.env_sr, ...
-        lowpass_tempmod, highpass_tempmod, causal, temp_BW);
+        lowpass_tempmod, highpass_tempmod, causal, temp_BW, temp_wavelet, ...
+        temp_random_phase, temp_random_filt, random_seed);
         
 else
     
@@ -147,7 +176,8 @@ if ~isnan(spec_mod_rate)
     % TF of spectral modulation filter
     Hs = filt_spec_mod(...
         spec_mod_rate, F, (1/P.logf_spacing),...
-        lowpass_specmod, highpass_specmod, spec_BW, spec_wavelet);
+        lowpass_specmod, highpass_specmod, spec_BW, spec_wavelet, ...
+        spec_random_phase, spec_random_filt, random_seed);
         
 else
     
