@@ -27,10 +27,10 @@ P.freq_pad_oct = 1;
 P.temp_pad_sec = 1;
 
 % audio sampling rate
-P.audio_sr = 20000;
+P.audio_sr = 4000;
 
 % sampling rate of the envelope in seconds
-P.env_sr = 50;
+P.env_sr = 100;
 
 % lowest filter in the audio filter bank
 % highest is the nyquist - P.audio_sr/2
