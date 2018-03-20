@@ -34,19 +34,19 @@ addpath('2DFT');
 spec_mod_rate = 2; % cycles per octave
 temp_mod_rate = 16; % Hertz
 spec_mod_lowpass = false;
-temp_mod_lowpass = false;
+temp_mod_lowpass = true;
 complex_filters = false;
 causal = true;
 fourier_domain = false;
-separable = false;
-spec_BW = 1;
+separable = true;
+spec_BW = 0.5;
 temp_BW = 1;
 spec_wavelet = 'morlet';
 temp_wavelet = 'gammatone';
-spec_random_phase = true;
-temp_random_phase = true;
-spec_random_filt = true;
-temp_random_filt = true;
+spec_random_phase = false;
+temp_random_phase = false;
+spec_random_filt = false;
+temp_random_filt = false;
 random_seed = 4;
 
 % result of convolution with the impulse response
