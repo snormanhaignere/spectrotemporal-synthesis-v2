@@ -154,8 +154,6 @@ if nargin < 21 || isempty(random_seed)
     random_seed = false;
 end
 
-temp_random_phase
-
 if ~isnan(temp_mod_rate)
 
     % TF of temporal modulation filter
