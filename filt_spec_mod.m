@@ -58,7 +58,11 @@ if nargin < 6
 end
 
 if nargin < 7
-    WAVELET = 'mexicanhat';
+    if BW == 1
+        WAVELET = 'mexicanhat';
+    else
+        WAVELET = 'morlet';
+    end
 end
 
 if nargin < 8
@@ -143,9 +147,9 @@ switch WAVELET
         center_bin = (floor(N/2)+1);
         f = ((1:N) - center_bin)/sr_oct;
         if LOWPASS
-            h = exp(-(fc_cycPoct*f*BW).^2);
+            h = exp(-(fc_cycPoct*f*BW*2).^2);
         else
-            h = cos(2*pi*f*fc_cycPoct) .* exp(-(fc_cycPoct*f*BW).^2);
+            h = cos(2*pi*f*fc_cycPoct) .* exp(-(fc_cycPoct*f*BW*2).^2);
         end
         
         % shift to create causal filter
