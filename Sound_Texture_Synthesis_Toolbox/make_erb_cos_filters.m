@@ -1,4 +1,4 @@
-% [FILTS, HZ_CUTOFFS, FREQS] = MAKE_ERB_COS_FILTERS(SIGNAL_LENGTH, SR, N, LOW_LIM, HI_LIM)
+% [FILTS, HZ_CUTOFFS, FREQS] = MAKE_ERB_COS_FILTERS(SIGNAL_LENGTH, SR, N, LOW_LIM, HI_LIM, ANIMAL)
 %
 % Returns N+2 filters as column vectors of FILTS 
 % filters have cosine-shaped frequency responses, with center frequencies
@@ -25,12 +25,31 @@
 % thus have a length that scales with the signal length (SIGNAL_LENGTH).
 %
 % SR is the sampling rate
+% 
+% ANIMAL: either 'human' (the default) or 'ferret'
 %
 % intended for use with GENERATE_SUBBANDS and COLLAPSE_SUBBANDS
 
 % Dec 2012 -- Josh McDermott <jhm@mit.edu>
+% 
+% March 2018 -- Modified to make it possible to use ferret ERBs
 
-function [filts,Hz_cutoffs,freqs] = make_erb_cos_filters(signal_length, sr, N, low_lim, hi_lim)
+function [filts,Hz_cutoffs,freqs] = make_erb_cos_filters(signal_length, sr, N, low_lim, hi_lim, animal)
+
+if nargin < 6
+    animal = 'human';
+end
+
+switch animal
+    case 'human'
+        freq2erb_fun = @freq2erb;
+        erb2freq_fun = @erb2freq;
+    case 'ferret'
+        freq2erb_fun = @freq2erb_ferret;
+        erb2freq_fun = @erb2freq_ferret;
+    otherwise
+        error('No matching animal');
+end
 
 if rem(signal_length,2)==0 %even length
     nfreqs = signal_length/2;%does not include DC
@@ -47,16 +66,16 @@ if hi_lim>sr/2
     hi_lim = max_freq;
 end
 %make cutoffs evenly spaced on an erb scale
-cutoffs = erb2freq([freq2erb(low_lim) : (freq2erb(hi_lim)-freq2erb(low_lim))/(N+1) : freq2erb(hi_lim)]);
+cutoffs = erb2freq_fun([freq2erb_fun(low_lim) : (freq2erb_fun(hi_lim)-freq2erb_fun(low_lim))/(N+1) : freq2erb_fun(hi_lim)]);
 
 for k=1:N
     l = cutoffs(k);
     h = cutoffs(k+2); %adjacent filters overlap by 50%
     l_ind = min(find(freqs>l));
     h_ind = max(find(freqs<h));
-    avg = (freq2erb(l)+freq2erb(h))/2;
-    rnge = (freq2erb(h)-freq2erb(l));
-    cos_filts(l_ind:h_ind,k) = cos((freq2erb( freqs(l_ind:h_ind) ) - avg)/rnge*pi); %map cutoffs to -pi/2, pi/2 interval
+    avg = (freq2erb_fun(l)+freq2erb_fun(h))/2;
+    rnge = (freq2erb_fun(h)-freq2erb_fun(l));
+    cos_filts(l_ind:h_ind,k) = cos((freq2erb_fun( freqs(l_ind:h_ind) ) - avg)/rnge*pi); %map cutoffs to -pi/2, pi/2 interval
 end
 
 %add lowpass and highpass to get perfect reconstruction
