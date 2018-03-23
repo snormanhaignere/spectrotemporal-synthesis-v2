@@ -105,13 +105,13 @@ end
 
 % index of the nyquist if present (i.e. if N is even)
 % otherwise maximum positive frequency
-nyq_index = ceil((N+1)/2);
+max_posfreq_index = ceil((N+1)/2);
 
 % positive frequencies
-pos_freqs = sr_oct*(0:nyq_index-1)'/N;
+pos_freqs = sr_oct*(0:max_posfreq_index-1)'/N;
 
 % check center frequency is below the maximum positive frequency
-if fc_cycPoct > nyq_index
+if fc_cycPoct > pos_freqs(end)
     error('Error in gen_corf_nopad.m: center frequency exceeds nyquist')
 end
 
@@ -157,7 +157,7 @@ switch WAVELET
         
         % frequency domain magnitude and phase of gammatone
         H0 = real(fft(h));
-        H_pos_freqs = H0(1:nyq_index)';        
+        H_pos_freqs = H0(1:max_posfreq_index)';        
         
     otherwise
         
@@ -185,9 +185,9 @@ end
 
 % negative frequencies
 if mod(N,2)==0 % nyquist present
-    H_neg_freqs = conj(flip(H_pos_freqs(2:nyq_index-1)));
+    H_neg_freqs = conj(flip(H_pos_freqs(2:max_posfreq_index-1)));
 else % nyquist absent
-    H_neg_freqs = conj(flip(H_pos_freqs(2:nyq_index)));
+    H_neg_freqs = conj(flip(H_pos_freqs(2:max_posfreq_index)));
 end
 
 % combine positive and negative frequencies
