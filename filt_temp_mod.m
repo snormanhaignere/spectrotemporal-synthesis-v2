@@ -88,14 +88,14 @@ end
 
 if RANDOM_FILT
     if N >= N_orig
-        h = randn(N_orig,1);
+        h = randn(N_orig,1)/sqrt(N_orig);
     else
         if ~CAUSAL
             N_pad = N_orig-N;
-            h = randn(N,1);
+            h = randn(N,1)/sqrt(N);
             h = [h(1:ceil(N/2)); zeros(ceil(N_pad),1); h(ceil(N/2)+1:end)]; % not exact
         else
-            h = [randn(N,1); zeros(N_orig-N,1)];
+            h = [randn(N,1)/sqrt(N); zeros(N_orig-N,1)];
         end
     end
     H = fft(h);
