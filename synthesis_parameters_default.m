@@ -1,4 +1,4 @@
-function P = synthesis_parameters_default
+    function P = synthesis_parameters_default
 
 % whether to just match the mean and variance of each filter response, or to
 % instead match the full histogram
@@ -36,7 +36,8 @@ P.lowrate_tempfilts_impulse_spec = [0.125 0.25];
 P.temp_mod_to_plot = [1 4 16];
 P.spec_mod_to_plot = [0.25 1 4];
 
-% amount of frequency padding, twice the period of the lowest spectral scale
+% frequency padding
+% 2x slowest period
 P.freq_pad_oct = 2/min(P.spec_mod_rates(P.spec_mod_rates>0));
 
 % temporal padding
@@ -85,3 +86,15 @@ P.match_coch_every_Nsec = [];
 % fix this seed if you want to the synthetics for a given
 % input to always be the same
 P.random_seed = randi(2^32);
+
+% bandwidths and types/shapes of the spectrotemporal filters
+P.spec_BW = 1;
+P.temp_BW = 1;
+P.spec_wavelet = 'mexicanhat'; 
+P.temp_wavelet = 'gammatone';
+
+% can randomize the filters or their phase, not recommended
+P.spec_random_phase = false;
+P.temp_random_phase = false;
+P.spec_random_filt = false;
+P.temp_random_filt = false;

@@ -1,4 +1,4 @@
-function P = measurement_parameters_toy
+    function P = measurement_parameters_toy
 
 % Toy parameters used to test the code
 % 
