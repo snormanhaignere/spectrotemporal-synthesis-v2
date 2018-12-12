@@ -29,8 +29,10 @@ end
 
 P = synthesis_parameters_default;
 P.spec_mod_rates = P.spec_mod_rates(P.spec_mod_rates>0);
-wavelet = 'mexicanhat';
-BW = 1;
+wavelet = 'morlet';
+BW = 0.5;
+lowpass = false;
+highpass = false;
 
 %% Temporal impulse responses
 

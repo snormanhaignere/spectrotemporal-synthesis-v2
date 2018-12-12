@@ -254,13 +254,13 @@ for i = 1:length(stimuli)
         
         % save
         P = P_coch;
-        save(coch_MAT_file, 'F', 'P');
+        save(coch_MAT_file, 'F', 'P', '-v7.3');
         clear F P;
         
     else
         
         % load
-        save(coch_MAT_file, 'F', 'P');
+        load(coch_MAT_file, 'F', 'P');
         coch = F;
         P_coch = P;
         clear F P;
@@ -327,7 +327,7 @@ for i = 1:length(stimuli)
             
             % save
             P = P_mod;
-            save(filtcoch_MAT_files{j}, 'F', 'P');
+            save(filtcoch_MAT_files{j}, 'F', 'P', '-v7.3');
             clear F P;
             
         end
@@ -422,7 +422,7 @@ for i = 1:n_model_features
         pca_weights = pca_weights(:,xi);
         pca_eigvals = pca_eigvals(xi);
         
-        save(pca_weight_MAT_files{i}, 'pca_weights', 'pca_eigvals', 'P', 'M', 'S')
+        save(pca_weight_MAT_files{i}, 'pca_weights', 'pca_eigvals', 'P', 'M', 'S', '-v7.3')
         
     else
         
@@ -460,7 +460,7 @@ for i = 1:n_model_features
             clear F;
 
             % save results
-            save(pca_timecourse_MAT_files{j,i}, 'pca_timecourses', 'P', 'dims');
+            save(pca_timecourse_MAT_files{j,i}, 'pca_timecourses', 'P', 'dims', '-v7.3');
             
         elseif P_orig.return_PCA_timecourses
             

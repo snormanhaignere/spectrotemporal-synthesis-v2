@@ -64,7 +64,7 @@ if nargin < 7
 end
 
 if nargin < 8
-    WAVELET = 1;
+    WAVELET = 'gammatone';
 end
 
 if nargin < 9
@@ -98,6 +98,7 @@ if RANDOM_FILT
             h = [randn(N,1)/sqrt(N); zeros(N_orig-N,1)];
         end
     end
+    h = h / sqrt(sum(h(:).^2)); % adding normalization
     H = fft(h);
     return
 end

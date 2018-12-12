@@ -99,6 +99,7 @@ if RANDOM_FILT
         h = randn(N,1)/sqrt(N);
         h = [h(1:ceil(N/2)); zeros(ceil(N_pad),1); h(ceil(N/2)+1:end)]; % not exact
     end
+    h = h / sqrt(sum(h(:).^2)); % adding normalization
     H = fft(h);
     return
 end
@@ -114,11 +115,6 @@ pos_freqs = sr_oct*(0:max_posfreq_index-1)'/N;
 if fc_cycPoct > pos_freqs(end)
     error('Error in gen_corf_nopad.m: center frequency exceeds nyquist')
 end
-
-% Gabor function
-% R1 = freqs/abs(fc);
-% C1 = 1/2/.3/.3;
-% H0 = exp(-C1*(R1-1).^2) + exp(-C1*(R1+1).^2);
 
 % Note that in the signal domain the mexican hat filter equals:
 % (1 - 2*(fc_cycPoct*pi*pos_freqs).^2) .* exp(-(fc_cycPoct*pi*pos_freqs).^2)

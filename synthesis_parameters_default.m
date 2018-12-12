@@ -1,4 +1,4 @@
-    function P = synthesis_parameters_default
+function P = synthesis_parameters_default
 
 % whether to just match the mean and variance of each filter response, or to
 % instead match the full histogram

@@ -31,17 +31,17 @@ clc;
 addpath('2DFT');
 
 % parameters
-spec_mod_rate = 2; % cycles per octave
+spec_mod_rate = 4; % cycles per octave
 temp_mod_rate = 16; % Hertz
-spec_mod_lowpass = false;
+spec_mod_lowpass = true;
 temp_mod_lowpass = true;
 complex_filters = false;
 causal = true;
 fourier_domain = false;
 separable = true;
-spec_BW = 0.5;
+spec_BW = 1;
 temp_BW = 1;
-spec_wavelet = 'morlet';
+spec_wavelet = 'mexicanhat';
 temp_wavelet = 'gammatone';
 spec_random_phase = false;
 temp_random_phase = false;
