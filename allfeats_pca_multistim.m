@@ -254,23 +254,27 @@ for i = 1:length(stimuli)
         
         % save
         P = P_coch;
-        save(coch_MAT_file, 'F', 'P', '-v7.3');
+        save(coch_MAT_file, 'F', 'P', 'coch', '-v7.3');
         clear F P;
+        need_to_load_coch = false;
         
     else
         
-        % load
-        load(coch_MAT_file, 'F', 'P');
-        coch = F;
-        P_coch = P;
-        clear F P;
+        need_to_load_coch = true;
 
     end
     
     % compute second layer filters from cochleogram
     for j = 1:length(modulation_types)
         if ~exist(filtcoch_MAT_files{j}, 'file') || P_orig.overwrite
-                           
+                                       
+            if need_to_load_coch
+                load(coch_MAT_file, 'P', 'coch');
+                need_to_load_coch = false;
+                P_coch = P;
+                clear P;
+            end
+            
             fprintf('Computing %s representation\n', modulation_types{j}); drawnow;
                         
             switch modulation_types{j}
